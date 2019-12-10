@@ -39,10 +39,22 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-// import {CossApiService} from './coss-api/coss-api.service';
 // import {CancelOrderResponse, OrderResponse} from "./swaggerSchema";
 var request_promise_native_1 = __importDefault(require("request-promise-native"));
+var BotTypes;
+(function (BotTypes) {
+    BotTypes["GRID"] = "GRID";
+})(BotTypes = exports.BotTypes || (exports.BotTypes = {}));
+var BotStatus;
+(function (BotStatus) {
+    BotStatus["Init"] = "Init";
+    BotStatus["Running"] = "Running";
+    BotStatus["Stopped"] = "Stopped";
+    BotStatus["Crashed"] = "Crashed";
+})(BotStatus = exports.BotStatus || (exports.BotStatus = {}));
 var config;
+var cossApi;
+var stopped = false;
 process.on('message', function (msg) { return __awaiter(void 0, void 0, void 0, function () {
     var bot, e_1;
     return __generator(this, function (_a) {
@@ -55,9 +67,11 @@ process.on('message', function (msg) { return __awaiter(void 0, void 0, void 0, 
                 return [4 /*yield*/, request_promise_native_1.default.get('http://localhost:3000/db/bots/' + msg.id, { json: true })];
             case 2:
                 bot = _a.sent();
-                config = bot.config;
-                // @ts-ignore
-                process.send(config);
+                if (bot.config) {
+                    config = bot.config;
+                    // @ts-ignore
+                    process.send('message', bot);
+                }
                 return [3 /*break*/, 4];
             case 3:
                 e_1 = _a.sent();

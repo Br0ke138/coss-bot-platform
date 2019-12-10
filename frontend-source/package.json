@@ -23,6 +23,7 @@
     "@angular/router": "~8.2.14",
     "apexcharts": "^3.10.1",
     "crypto-js": "latest",
+    "decimal.js": "^10.2.0",
     "hammerjs": "^2.0.8",
     "ng-apexcharts": "^1.1.1",
     "ngx-mat-select-search": "^2.0.0",

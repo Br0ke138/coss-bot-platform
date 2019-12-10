@@ -13,7 +13,7 @@ import {
   MatIconModule,
   MatInputModule,
   MatListModule, MatProgressSpinnerModule, MatSelectModule,
-  MatSidenavModule,
+  MatSidenavModule, MatTableModule,
   MatToolbarModule
 } from '@angular/material';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
@@ -30,6 +30,7 @@ import { NewKeyComponent } from './pages/keys/new-key/new-key.component';
 import {NgApexchartsModule} from 'ng-apexcharts';
 import {HttpClientModule} from '@angular/common/http';
 import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
+import { OrderTableComponent } from './pages/bots/bots-detail/order-table/order-table.component';
 
 @NgModule({
   declarations: [
@@ -43,7 +44,8 @@ import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
     BotsDetailComponent,
     KeysComponent,
     KeysDetailComponent,
-    NewKeyComponent
+    NewKeyComponent,
+    OrderTableComponent
   ],
   imports: [
     BrowserModule,
@@ -65,7 +67,8 @@ import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
     MatSelectModule,
     MatGridListModule,
     NgApexchartsModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatTableModule
   ],
   providers: [],
   bootstrap: [AppComponent],

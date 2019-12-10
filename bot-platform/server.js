@@ -5,7 +5,7 @@ const request = require('request');
 const path = require('path');
 const cors = require('cors');
 
-const { fork } = require('child_process');
+const {fork} = require('child_process');
 
 // App
 const app = express();
@@ -19,6 +19,18 @@ app.use(require('./database/routes/index.routes'));
 
 const bots = [];
 
+process.once("SIGTERM", function () {
+    process.exit(0);
+});
+process.once("SIGINT", function () {
+    process.exit(0);
+});
+process.once("exit", function () {
+    bots.forEach(bot => {
+        bot.bot.shutdown();
+    })
+});
+
 app.use('/botApi/start/:id', (req, res) => {
     const bot = bots.find(bot => {
         return bot.id === req.params.id;
@@ -30,9 +42,15 @@ app.use('/botApi/start/:id', (req, res) => {
             console.log('Message from child', msg);
         });
 
-        forked.on('exit', (code) => {
-            console.log(`Child exited with code ${code}`);
-        });
+        forked.onUnexpectedExit = function (code, signal) {
+            console.log("Child process terminated with code: " + code);
+        };
+        forked.on("exit", child.onUnexpectedExit);
+
+        forked.shutdown = function () {
+            this.removeListener("exit", this.onUnexpectedExit);
+            this.kill("SIGTERM");
+        };
 
         bots.push({
             id: req.params.id,
@@ -84,7 +102,7 @@ app.use('/api/:route', (req, res) => {
     }
     url += req.url;
 
-    request(url, {json: true}, (err, resp, body) => {
+    request(url, {json: true, proxy: 'http://proxy.rwe.com:8080'}, (err, resp, body) => {
         res.header('Access-Control-Allow-Origin', '*');
         if (err) {
             res.status(500).json(err);

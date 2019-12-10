@@ -29,15 +29,9 @@ export class BotsService {
     return this.http.delete('http://localhost:3000/db/bots/' + id);
   }
 
-  // startBot(id: string): boolean {
-  //   const botToStart = this.bots.find(bot => bot.id === id);
-  //   if (botToStart) {
-  //     botToStart.status = BotStatus.Running;
-  //     return true;
-  //   } else {
-  //     return false;
-  //   }
-  // }
+  startBot(id: string) {
+    return this.http.get('http://localhost:3000/botApi/start/' + id);
+  }
   //
   // stopBot(id: string): boolean {
   //   const botToStop = this.bots.find(bot => bot.id === id);
@@ -58,7 +52,7 @@ export interface Bot {
   type: BotTypes;
   status?: BotStatus;
   orders?: Array<string>;
-  config?: any;
+  config?: Config;
   key?: {public: string, secret: string};
 }
 
@@ -71,4 +65,13 @@ export enum BotStatus {
   'Running' = 'Running',
   'Stopped' = 'Stopped',
   'Crashed' = 'Crashed',
+}
+
+export interface Config {
+  pair: string;
+  upperWall: string;
+  lowerWall: string;
+  numberOfGrids: string;
+  amountPerGrid: string;
+  grids?: Array<string>;
 }

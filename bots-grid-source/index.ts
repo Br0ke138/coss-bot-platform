@@ -1,16 +1,51 @@
-// import {CossApiService} from './coss-api/coss-api.service';
+import {CossApiService} from './coss-api/coss-api.service';
 // import {CancelOrderResponse, OrderResponse} from "./swaggerSchema";
 import request from "request-promise-native";
+export interface Bot {
+    id?: string;
+    name: string;
+    type: BotTypes;
+    status?: BotStatus;
+    orders?: Array<string>;
+    config?: Config;
+    key?: {public: string, secret: string};
+}
 
-let config: any;
+export enum BotTypes {
+    'GRID' = 'GRID',
+}
+
+export enum BotStatus {
+    'Init' = 'Init',
+    'Running' = 'Running',
+    'Stopped' = 'Stopped',
+    'Crashed' = 'Crashed',
+}
+
+export interface Config {
+    pair: string;
+    upperWall: string;
+    lowerWall: string;
+    numberOfGrids: string;
+    amountPerGrid: string;
+    grids?: Array<string>;
+}
+let config: Config;
+let cossApi;
+
+let stopped = false;
 
 process.on('message', async (msg) => {
     if (msg.action === 'start') {
+        // @ts-ignore
+        process.send('Bot started');
         try {
-            const bot = await request.get('http://localhost:3000/db/bots/' + msg.id, {json: true});
-            config = bot.config;
-            // @ts-ignore
-            process.send(config);
+            const bot: Bot = await request.get('http://localhost:3000/db/bots/' + msg.id, {json: true});
+            if (bot.config) {
+                config = bot.config;
+                // @ts-ignore
+                process.send('message', bot);
+            }
         } catch (e) {
             // @ts-ignore
             process.send(e);

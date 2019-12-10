@@ -21,7 +21,7 @@
     <mat-card-title>Configuration</mat-card-title>
 
     <div class="flex-container">
-      <form class="example-form" [formGroup]="form" >
+      <form class="example-form" [formGroup]="form">
         <div *ngIf="bot?.status === 'Running'" style="padding-bottom: 4px;">
           Bot has to be stopped to change the settings.
         </div>
@@ -57,29 +57,29 @@
         </mat-form-field>
 
         <button mat-raised-button color="primary"
-                [disabled]="bot?.status === 'Running' || !form.value.pair || !form.value.upperWall || !form.value.lowerWall || !form.value.numberOfGrids || !form.value.amountPerGrid"
+                [disabled]="form.value.amountPerGrid < minOrderSize || bot?.status === 'Running' || !form.value.pair || !form.value.upperWall || !form.value.lowerWall || !form.value.numberOfGrids || !form.value.amountPerGrid"
                 (click)="saveConfig()">Save
+        </button>
+
+        <button mat-raised-button color="primary"
+                [disabled]="!form.value.pair"
+                (click)="initChart(form.value)">Visualize
         </button>
       </form>
 
-      <mat-spinner *ngIf="currentPair && !showChart" ></mat-spinner>
-      <apx-chart  *ngIf="showChart" [tooltip]="tooltip" [series]="series" [chart]="chart" [title]="title"
+      <mat-spinner *ngIf="currentPair && !showChart"></mat-spinner>
+      <apx-chart *ngIf="showChart" [tooltip]="tooltip" [series]="series" [chart]="chart" [title]="title"
                  [xaxis]="xAxis" [yaxis]="yAxis" [stroke]="stroke" [colors]="colors" [grid]="grid"
                  [legend]="legend"></apx-chart>
     </div>
 
-    <div class="flex-container">
-      <div >
-        <mat-list role="list">
-          <mat-list-item role="listitem" *ngFor="let grid of getBuyOrders()">{{ grid }}</mat-list-item>
-        </mat-list>
-      </div>
-
-      <div >
-        <mat-list role="list">
-          <mat-list-item role="listitem" *ngFor="let grid of getSellOrders()">{{ grid }}</mat-list-item>
-        </mat-list>
-      </div>
+    <div class="flex-container" *ngIf="showChart && form.value.amountPerGrid > 0">
+      <h2>Initial Buy Orders (Need {{ this.totalBuy }} {{ currentPair ? currentPair.split('_')[1] : '' }})</h2>
+      <h2>Initial Sell Orders (Need {{ this.totalSell }} {{ currentPair ? currentPair.split('_')[0] : '' }})</h2>
+    </div>
+    <div class="flex-container" *ngIf="showChart && form.value.amountPerGrid > 0">
+      <app-order-table [pair]="currentPair" [dataSource]="getBuyOrders()"></app-order-table>
+      <app-order-table [pair]="currentPair" [dataSource]="getSellOrders()"></app-order-table>
     </div>
 
 

@@ -16,6 +16,7 @@ import {
 } from 'ng-apexcharts';
 import {take} from 'rxjs/operators';
 import {HttpClient} from '@angular/common/http';
+import {Decimal} from 'decimal.js';
 
 @Component({
   selector: 'app-bots-detail',
@@ -28,6 +29,10 @@ export class BotsDetailComponent implements OnInit {
   private routeSub: Subscription;
   form: FormGroup;
   currentPair: string;
+
+  totalBuy = 0;
+  totalSell = 0;
+
   pairSeries: ApexAxisChartSeries;
 
   tooltip: ApexTooltip = {
@@ -127,8 +132,17 @@ export class BotsDetailComponent implements OnInit {
       amount_limit_decimal: string;
       price_limit_decimal: string;
       allow_trading: boolean;
+    }],
+    base_currencies: [{
+      currency_code: string;
+      minimum_total_order: string;
     }]
   };
+  precisionPrice = 0;
+  precisionAmount = 0;
+
+  minOrderSize = 0;
+  margin = 0;
 
   constructor(
     private route: ActivatedRoute,
@@ -147,6 +161,14 @@ export class BotsDetailComponent implements OnInit {
         this.exchangeInfo.symbols.forEach(symbol => {
           this.symbols.push(symbol.symbol);
         });
+
+        if (this.currentPair) {
+          this.exchangeInfo.base_currencies.forEach(currency => {
+            if (currency.currency_code === this.currentPair.split('_')[1]) {
+              this.minOrderSize = parseFloat(currency.minimum_total_order);
+            }
+          });
+        }
 
         this.symbols.sort((a: string, b: string) => {
           return a.split('_')[0] < b.split('_')[0] ? -1 : 1;
@@ -172,7 +194,6 @@ export class BotsDetailComponent implements OnInit {
               numberOfGrids: new FormControl(this.bot.config.numberOfGrids),
               amountPerGrid: new FormControl(this.bot.config.amountPerGrid),
             });
-            this.initChart(this.form.value);
           } else {
             this.form = new FormGroup({
               pair: new FormControl(),
@@ -182,9 +203,6 @@ export class BotsDetailComponent implements OnInit {
               amountPerGrid: new FormControl(),
             });
           }
-          this.form.valueChanges.subscribe(form => {
-            this.initChart(form);
-          });
         }
       });
     });
@@ -192,12 +210,15 @@ export class BotsDetailComponent implements OnInit {
 
   }
 
-  // startBot() {
-  //   this.botsService.startBot(this.bot.id);
-  //   this.bot = this.botsService.getBot(this.bot.id);
-  //   this.form.disable();
-  // }
-  //
+  startBot() {
+    this.botsService.startBot(this.bot.id).pipe(take(1)).subscribe(() => {
+      this.botsService.getBot(this.bot.id).pipe(take(1)).subscribe(bot => {
+        this.bot = bot;
+        this.form.disable();
+      });
+    });
+  }
+
   // stopBot() {
   //   this.botsService.stopBot(this.bot.id);
   //   this.bot = this.botsService.getBot(this.bot.id);
@@ -213,10 +234,11 @@ export class BotsDetailComponent implements OnInit {
 
 
   saveConfig() {
-    const bot = this.bot;
+    const bot: Bot = this.bot;
     bot.config = this.form.value;
+    bot.config.grids = this.grids;
 
-    this.botsService.updateBot(this.bot.id, bot).pipe(take(1)).subscribe( update => {
+    this.botsService.updateBot(this.bot.id, bot).pipe(take(1)).subscribe(update => {
       this.botsService.getBot(this.bot.id).pipe(take(1)).subscribe(bot => {
         this.bot = bot;
         this.fillForm(this.bot.config);
@@ -240,6 +262,13 @@ export class BotsDetailComponent implements OnInit {
     if (form.pair) {
       if (this.currentPair !== form.pair) {
         this.currentPair = form.pair;
+        if (this.exchangeInfo) {
+          this.exchangeInfo.base_currencies.forEach(currency => {
+            if (currency.currency_code === this.currentPair.split('_')[1]) {
+              this.minOrderSize = parseFloat(currency.minimum_total_order);
+            }
+          });
+        }
         this.showChart = false;
         this.http.get('http://localhost:3000/api/engine/cs?symbol=' + form.pair + '&tt=12h')
           .pipe(take(1))
@@ -267,11 +296,12 @@ export class BotsDetailComponent implements OnInit {
               type: 'candlestick',
               data
             }];
-            this.pairSeries = this.series;
-            this.seriesCopy = this.series;
+            this.pairSeries = [].concat(this.series);
+            this.seriesCopy = [].concat(this.series);
 
             this.current = parseFloat(cs.series[cs.series.length - 1][4]);
             this.buildGrids(form, this.current, this.dateTimes);
+            this.showChart = true;
           });
       } else {
         this.buildGrids(form, this.current, this.dateTimes);
@@ -285,18 +315,33 @@ export class BotsDetailComponent implements OnInit {
   buildGrids(form: { pair, upperWall, lowerWall, numberOfGrids }, current: number, dateTimes: Array<number>) {
     if (form.upperWall && form.lowerWall && form.numberOfGrids) {
 
-      const series = this.pairSeries;
+      const series = [].concat(this.pairSeries);
       // Grids
       this.grids = [];
 
       const upper = form.upperWall;
       const lower = form.lowerWall;
       const gridAmount = form.numberOfGrids;
-      const margin = (upper - lower) / gridAmount;
+
+
+      this.precisionPrice = 0;
+      this.exchangeInfo.symbols.forEach(symbol => {
+        if (symbol.symbol === this.currentPair) {
+          this.precisionPrice = parseInt(symbol.price_limit_decimal, 10);
+          this.precisionAmount = parseInt(symbol.amount_limit_decimal, 10);
+        }
+      });
+
+      this.margin = Math.ceil(Math.pow(10, this.precisionPrice) * ((upper - lower) / gridAmount)) / Math.pow(10, this.precisionPrice);
 
       for (let i = 0; i < gridAmount; i++) {
-        this.grids.push(upper - (i * margin));
+        this.grids.push((Decimal.sub(upper, (Decimal.mul(this.margin, i).toNumber())).toNumber()));
       }
+
+      // tslint:disable-next-line:max-line-length
+      const closest = this.grids.reduce((prev, curr) => (Math.abs(parseFloat(curr) - this.current) < Math.abs(parseFloat(prev) - this.current) ? curr : prev));
+      this.grids.splice(this.grids.indexOf(closest), 1);
+
       this.colors = ['black'];
 
       this.grids.forEach((grid, index) => {
@@ -320,21 +365,55 @@ export class BotsDetailComponent implements OnInit {
         }
       });
 
-      this.series = this.series.concat(series);
+      this.series = series;
+      this.showChart = true;
     }
-    this.showChart = true;
+
   }
 
   getBuyOrders(): Array<number> {
-    return this.grids.filter(grid => {
+    const grids = this.grids.filter(grid => {
       return grid < this.current;
     });
+
+    this.totalBuy = 0;
+
+    const dataSource = [];
+    grids.forEach(grid => {
+      dataSource.push({
+        price: grid,
+        asset: Decimal.div(this.form.value.amountPerGrid, grid).toNumber().toFixed(this.precisionAmount),
+        quote: this.form.value.amountPerGrid,
+        profit: ((((grid + this.margin) / grid) - 1) * 100).toFixed(2),
+      });
+      this.totalBuy = Decimal.add(this.totalBuy, this.form.value.amountPerGrid).toNumber();
+    });
+
+    this.totalBuy = parseFloat(this.totalBuy.toFixed(this.precisionPrice));
+    return dataSource;
   }
 
   getSellOrders(): Array<number> {
-    return this.grids.filter(grid => {
+    const grids = this.grids.filter(grid => {
       return grid > this.current;
     });
+
+    this.totalSell = 0;
+
+    const dataSource = [];
+    grids.forEach(grid => {
+      dataSource.push({
+        price: grid,
+        asset: Decimal.div(this.form.value.amountPerGrid, grid).toNumber().toFixed(this.precisionAmount),
+        quote: this.form.value.amountPerGrid,
+        profit: ((1 - ((grid - this.margin) / grid)) * 100).toFixed(2),
+      });
+      this.totalSell = Decimal.add(this.totalSell, Decimal.div(this.form.value.amountPerGrid, grid).toNumber()).toNumber();
+    });
+
+    this.totalSell = parseFloat(this.totalSell.toFixed(this.precisionAmount));
+
+    return dataSource.reverse();
   }
 
 }
