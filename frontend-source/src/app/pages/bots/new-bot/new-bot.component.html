@@ -1,0 +1,26 @@
+<form class="example-form" [formGroup]="form">
+  <mat-form-field class="example-full-width">
+    <input matInput placeholder="Name" value="" formControlName="name">
+  </mat-form-field>
+
+  <mat-form-field class="example-full-width">
+    <mat-label>Type</mat-label>
+    <mat-select formControlName="type">
+      <mat-option [value]="'GRID'">
+        Grid Trading
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field class="example-full-width">
+    <mat-label>Api Key Set</mat-label>
+    <mat-select formControlName="keys">
+      <mat-option *ngFor="let key of keys" [value]="{public: key.public, secret: key.secret}">
+        {{ key.name }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <button mat-raised-button color="primary" [disabled]="form.value.name === null || form.value.type === null" (click)="dialogRef.close(form.value)">Create</button>
+  <button mat-button (click)="dialogRef.close(null)">Abort</button>
+</form>

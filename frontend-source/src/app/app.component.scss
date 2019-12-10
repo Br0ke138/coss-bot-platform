@@ -1,0 +1,53 @@
+@import '~@angular/material/prebuilt-themes/pink-bluegrey.css';
+
+html, body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.layout {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  min-height: 100%;
+
+  .nav {
+    flex: 1;
+    background-color: darkgray;
+  }
+
+  .main {
+    display: flex;
+    flex: 5;
+    background-color: orange;
+    flex-direction: column;
+
+    .header {
+      background-color: deepskyblue;
+    }
+
+    .content {
+      flex: 1;
+      background-color: gray;
+    }
+
+    .footer {
+      background-color: limegreen;
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,1838 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "description": "This is coss public api to facilitate secure trading for registered users. You can find out more about how to enable api and obtain api key for trading under Profile section in coss.io [https://coss.io](https://coss.io) . For APIs which require signing user must provide following headers in request\n Authorisation - The public key.\n Signature - The HMAC256 hashed payload using private key.\n \n Please refer to [community trading wrappers](https://github.com/coss-exchange) for sample codes \n \n   <h1>API news</h1>\n   \n  <ul>\n    <li> \n      <strong><u>January, 16 2019</u></strong> : Document update for <strong>rate limits and order cancellation limits</strong> information\n        <ul>\n         <li> The api <strong>https://trade.coss.io/c/api/v1/exchange-info</strong> rate_limits contains objects related to the exchange’s REQUESTS rate limits. <br/><br/>  \n        </li>\n         <li> A 429 will be returned when rate limit is violated.  <br/><br/>  \n        </li>\n        <li>\n            Your account may get <strong>blocked when you place and cancel orders too frequently </strong>as explained below:\n         <br/><br/>\n         <font color=\"red\"><strong>\n         The frequency of your order placement and cancellation was too high. If you placed and cancelled an order within 10 seconds then it is counted as a violation. Five continuous violations would result your account being blocked.   </strong></font> <br/><br/>\n        <strong> First occurrence</strong>: Your transactions will be blocked for 5 minutes.<br>\n         <strong>Second occurrence</strong>: You will be blocked for 1 hour.<br>\n         <strong>Third occurrence</strong>: Your account will be locked for 24 hours.<br/>\n         <strong>Fourth occurrence</strong>: Your account will be locked for a longer duration. You may need to contact support to unlock your account.\n        </li>\n        <br/>\n      <li>\n      <strong><u>December, 19th 2018</u></strong> : Changes regarding COSS 1.2\n        <ul>\n         <li> A new api has been added to provide trade details for an order <br/>  \n         https://trade.coss.io/c/api/v1/order/trade-detail\n           <br/>\n        </li>\n       <li> For API server status please use following <br/>  \n       https://trade.coss.io/c/api/v1/ping\n           <br/>\n        </li>\n       <li> For API server  time please use following <br/>  \n       https://trade.coss.io/c/api/v1/time\n           <br/>\n        </li>\n       <li> For retrieving market summaries please use  \n       https://exchange.coss.io/api/getmarketsummaries\n           [1 unit] <br/>\n        Please note that this api is used by external data providers and the symbol format is different from api for users.   \n        </li>\n        <li>\n          Updated Document to reflect paths specific to hosts.\n        </li>\n        <li>\n         Your account may get blocked when you place and cancel orders too frequently as explained below:\n         <br/><br/>\n         The frequency of your order placement and cancellation was too high.<br/>\n         First occurrence: Your transactions will be blocked for 5 minutes.<br>\n         Second occurrence: You will be blocked for 1 hour.<br>\n         Third occurrence: Your account will be locked for 24 hours.<br/>\n         Fourth occurrence: Your account will be locked for a longer duration. You may need to contact support to unlock your account.\n        </li>          \n      </ul>\n  <ul>\n    <li>\n      <strong><u>December, 7th 2018</u></strong> : Changes regarding COSS 1.2\n      <ul>\n        <li>\n      Rate Limits have been an issue. To make it fairer and easier to deal with burst data, we’re decreasing the API throttling. We’re assigning a usage limit of 1000 units per “MINUTE”. Different API calls have different weights, heavier calls use more units. We’ve added the weight below in []’s\n        </li>\n        <li>\n          <code>https://api.coss.io/v1/</code> will be depreciated and split into 2 two domains:\n          <ol>\n            <li>\n              <code>https://engine.coss.io/api/v1/</code> - this will handle all our pricing streams\n              <ul>\n                <li>\n                  <strong>GET</strong> <u>/dp</u> - for depth  [1 unit]\n                </li>\n                <li>\n                  <strong>GET</strong> <u>/ht</u> - for trade history [1 unit]\n                </li>\n              </ul>\n            </li>\n            <li>\n              <code>https://trade.coss.io/c/api/v1/</code> - this will handle all account and order requests\n              <ul>\n                <li>\n                  <strong>POST</strong> <u>/order/add</u> [1 unit]\n                </li>\n                <li>\n                  <strong>DELETE</strong> <u>/order/cancel</u> [1 unit]\n                </li>\n                <li>\n                  <strong>POST</strong> <u>/order/details</u> [1 unit]\n                </li>\n                <li>\n                  <strong>POST</strong> <u>/order/list/open</u> [1 unit]\n                </li>\n                <li>\n                  <strong>POST</strong> <u>/order/list/completed</u> [1 unit]\n                </li>\n                <li>\n                  <strong>POST</strong> <u>/order/list/all</u> [5 units]\n                </li>\n                <li>\n                  <strong>GET</strong> <u>/account/balances</u> [5 units]\n                </li>\n                <li>\n                  <strong>GET</strong> <u>/account/details</u> [5 units] \n                </li>\n                <li>\n                  <strong>GET</strong> <u>/market-price</u> [1 unit]\n                </li>\n                <li>\n                  <strong>GET</strong> <u>/exchange-info</u> [1 unit]\n                </li>\n              </ul>\n            </li>\n          </ol>\n        </li>\n        <li>\n          We’ve added price precision on order price and size (similar to other exchanges)\n          e.g. for ETH_BTC price precision 5 order size precision 3 (full list below)\n          The precision per pair is available from the /exchange-info API call\n        </li>\n        <li>\n          We’ve added a new websocket price feed for order book depth and trades, it’s efficient as 0 units to use\n          <ul>\n            <li>\n               <strong>GET</strong> <u>wss://engine.coss.io/ws/v1/ht/{symbol}</u>\n              <blockquote>\n                {<br />\n                  &emsp;\"c\" : 1544064724447,   // Event time<br />\n                  &emsp;\"e\" : \"history_trade\", // Event type<br />\n                  &emsp;\"k\" : 461999,       // ID<br />\n                  &emsp;\"m\" : false,        // Buyer Made Order (buy order)<br />\n                  &emsp;\"p\" : \"0.02771000\", // Price<br />\n                  &emsp;\"q\" : \"0.37800000\", // Quantity (Size)<br />\n                  &emsp;\"s\" : \"ETH_BTC\",    // Symbol<br />\n                  &emsp;\"t\" : 1544064724247 // Trade Time<br />\n                }\n              </blockquote>\n            </li>\n            <li>\n              <strong>GET</strong> <u>wss://engine.coss.io/ws/v1/dp/{symbol}</u>\n              <blockquote>\n                {<br />\n                  &emsp;\"a\" : [ // asks<br />\n                  &emsp;&emsp;[<br />\n                  &emsp;&emsp;&emsp;&emsp;\"0.02773000\",   // price<br />\n                  &emsp;&emsp;&emsp;&emsp;\"0.67800000\"    // size<br />\n                  &emsp;&emsp;]<br />\n                  &emsp;],<br />\n                  &emsp;\"b\" : [ // bids<br />\n                  &emsp;&emsp;[<br />\n                  &emsp;&emsp;&emsp;\"0.02769000\",   // price<br />\n                  &emsp;&emsp;&emsp;\"0.97800000\"    // size<br />\n                  &emsp;&emsp;]<br />\n                  &emsp;]<br />\n                  &emsp;\"e\" : \"depthUpdate\" // event_type<br />\n                  &emsp;\"s\" : \"ETH_BTC\"   // Symbol<br />\n                  &emsp;\"t\" : 1544064724247 // Time<br />\n                }<br />\n              </blockquote>\n            </li>\n          </ul>\n        </li>\n        <li>\n          A list of the symbols and the precision (some samples)\n          <table>\n            <thead>\n              <tr>\n                <th>Pairs</th>\n                <th>Token</th>\n                <th>Base Pair</th>\n                <th>Order Amount Limit Decimal</th>\n                <th>Order Price Limit Decimal</th>\n              </tr>\n            </thead>\n            <tbody>\n              <tr>\n                <td>COSS_BTC</td>\n                <td>COSS</td>\n                <td>BTC</td>\n                <td>2</td>\n                <td>6</td>\n              </tr>\n              <tr>\n                <td>COSS_ETH</td>\n                <td>COSS</td>\n                <td>ETH</td>\n                <td>2</td>\n                <td>6</td>\n              </tr>\n              <tr>\n                <td>KIN_BTC</td>\n                <td>KIN</td>\n                <td>BTC</td>\n                <td>0</td>\n                <td>8</td>\n              </tr>\n              <tr>\n                <td>KIN_ETH</td>\n                <td>KIN</td>\n                <td>ETH</td>\n                <td>1</td>\n                <td>7</td>\n              </tr>\n              <tr>\n                <td>NEO_BTC</td>\n                <td>NEO</td>\n                <td>BTC</td>\n                <td>3</td>\n                <td>5</td>\n              </tr>\n              <tr>\n                <td>NEO_ETH</td>\n                <td>NEO</td>\n                <td>ETH</td>\n                <td>3</td>\n                <td>5</td>\n              </tr>\n            </tbody>\n          </table>\n        </li>\n      </ul>\n    </li>\n    <li>\n      <strong><u>November, 16th 2018</u></strong> : Updated API Document</li>\n    <li>\n      <strong><u>October, 31st 2018</u></strong> : To match industry convention, changed response code for Order creation from <code>202</code> to <code>200</code></li>\n    <li>\n      <strong><u>October, 30th 2018</u></strong> : Reduced Throttling to 1 request per second</li>\n  </ul>\n</p> <p>\n  <h3>Swagger Specs</h3>\n  <ul>\n    <li>You can also copy &amp; paste\n      <a href=\"https://s3-ap-southeast-1.amazonaws.com/coss-dev-s3-static-site-assets/api-gateway/apispecs.json\">coss-api-json</a> into an online swagger editor at\n      <a href=\"http://swagger.io\">swagger.io</a>\n    </li>\n</p> <p>\n  </ul>\n</p> <p>\n  <h3>Sample Code</h3>\n  <ul>\n    <li>Please refer to\n      <a href=\"https://github.com/coss-exchange\">community trading wrapper</a> for sample codes</li>\n  </ul>\n</p> <p>\n  <h3>Note: Known Issues</h3>\n  <h3>SIGNED GET Method</h3>\n  <ul>\n    <li>Please provide the query string (Signed GET methods for account/balances and account/details) in alphabetical order. The cloud provider sends the query strings of parameter names (arranged alphabetically) so the signed pay load may not match at server end. As a work around, please provide parameters in the  following format:\n      recvWindow=5000&timestamp=12345678</li>\n  </ul>\n</p> <h3>Orders</h3> <ul>\n  <li>After creation of a new order, a response code <code>200</code> is sent when order created successfully.</li>\n  <li>stop_price in order request and response is not used. The field is for future release.</li>\n  <li>Completed orders not returning orders which were created before public API release.</li>\n  <li>Market Orders are not currently supported. Please use Limit Orders.</li>\n</ul> <p>\n  <br/> </p>\n<p>\n  <h3>General</h3>\n  <ul>\n    <li>Timestamp and recvWindow are for future release and currently not used for request timeout, however for signed GET requests the signed payload must be provided: recvWindow=5000&amp;timestamp=12345678</li>\n    <li>Throttling is now set to 1 request every second, this will change over the coming weeks</li>\n  </ul>\n</p> <p>\n  <br/> </p>\n\n# Authentication\n\n<!-- ReDoc-Inject: <security-definitions> -->",
+    "version": "1.2",
+    "title": "COSS public api for trading",
+    "termsOfService": "https://coss.io",
+    "contact": {
+      "email": "support@coss.io"
+    },
+    "license": {
+      "name": "coss",
+      "url": "https://api.coss.io"
+    }
+  },
+  "tags": [
+    {
+      "name": "Account",
+      "description": "Everything about your account and wallets. Currently user can retrieve the account balances and account details. Account details to be enriched with more information  in future release which will provide information like daily trading limits, kyc status etc."
+    },
+    {
+      "name": "Exchange information",
+      "description": "Buy ,Sell, and trading rules information for active (non frozen) symbols."
+    },
+    {
+      "name": "Market",
+      "description": "Information related to market depth, market price, and  market summaries."
+    },
+    {
+      "name": "Order management",
+      "description": "Everything about your order management and statuses."
+    },
+    {
+      "name": "Server information",
+      "description": "Check server status and server time"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "COSS public api",
+        "description": "COSS public api",
+        "responses": {
+          "200": {
+            "description": "COSS public api for registered traders."
+          },
+          "500": {
+            "description": "COSS public api not available."
+          }
+        }
+      }
+    },
+    "/account/balances (HMAC SHA256)": {
+      "get": {
+        "tags": [
+          "Account"
+        ],
+        "summary": "Retrieves account balances information.",
+        "description": "This is a signed function. User must provide the public api key in Authorization header and signed payload in Signature header. On a Linux machine following command will generate the signed pay load echo -n 'recvWindow=5000×tamp=1540203005798’ | openssl dgst -sha256 -hmac ‘replace this by your private key value’ Example URL: https://trade.coss.io/c/api/v1/account/balances",
+        "servers": [
+          {
+            "url": "https://trade.coss.io/c/api/v1/"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "timestamp",
+            "in": "query",
+            "description": "Mandatory field for retrieving account balances in query string ?recvWindow=5000×tamp=1540203005798. The future release of API generate use timestamp provided by user in conjunction with recvWindow parameter provided by the user to check if request has reached in time. If the server timestamp is later than sun of value of timestamp and recvWindow by the user  then request will be rejected.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "recvWindow",
+            "in": "query",
+            "description": "Optional field for retrieving account balances in query string ?recvWindow=5000×tamp=1540203005798. ",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Account Balances Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountBalanceArray"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/details (HMAC SHA256)": {
+      "get": {
+        "tags": [
+          "Account"
+        ],
+        "summary": "Retrieves account details information.",
+        "description": "This is a signed function. User must provide the public api key in Authorisation header and signed payload in Signature header. On a Linux machine following command will generate the signed pay load echo -n ''recvWindow=5000×tamp=1540203005798’’ | openssl dgst -sha256 -hmac ‘replace this by your private key value’ Example URL: https://trade.coss.io/c/api/v1/account/details",
+        "servers": [
+          {
+            "url": "https://trade.coss.io/c/api/v1/"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "timestamp",
+            "in": "query",
+            "description": "Mandatory field for retrieving account details in query string ?recvWindow=5000×tamp=1540203005798.If the server timestamp is later than sum of value of timestamp and recvWindow provided by the user  then request will be rejected.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "recvWindow",
+            "in": "query",
+            "description": "Optional field for retrieving account balances in query string ?timestamp=1540203005798&recvWindow=5000. ",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Account Details Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/exchange-info": {
+      "get": {
+        "tags": [
+          "Exchange information"
+        ],
+        "summary": "Provides information about trading rules, symbols etc.",
+        "description": "This is a public function and does not require signing. It provides information about trading rules, symbols etc Example URL: https://trade.coss.io/c/api/v1/exchange-info",
+        "servers": [
+          {
+            "url": "https://trade.coss.io/c/api/v1/"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Exchange Information Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExchangeInfo"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ping": {
+      "get": {
+        "tags": [
+          "Server information"
+        ],
+        "summary": "Test connectivity to API",
+        "description": "Test connectivity to API.  Example URL: https://trade.coss.io/c/api/v1/ping",
+        "servers": [
+          {
+            "url": "https://trade.coss.io/c/api/v1/"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "API Connectivity Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerStatusInfo"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/time": {
+      "get": {
+        "tags": [
+          "Server information"
+        ],
+        "summary": "Test connectivity to API and get Server time",
+        "description": "Test connectivity to API and get server time.  Example URL: https://trade.coss.io/c/api/v1/time",
+        "servers": [
+          {
+            "url": "https://trade.coss.io/c/api/v1/"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "API Connectivity and Time Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerTimeInfo"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/getmarketsummaries": {
+      "get": {
+        "tags": [
+          "Market"
+        ],
+        "summary": "Provides information about market summaries for symbols.",
+        "description": "This is a public function and does not require signing. Retrieves market summaries for all symbols.<br>\n  URL Example : https://exchange.coss.io/api/getmarketsummaries",
+        "servers": [
+          {
+            "url": "https://exchange.coss.io/api/"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Market Summaries Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketSummariesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/market-price/": {
+      "get": {
+        "tags": [
+          "Market"
+        ],
+        "summary": "Retrieves market price information",
+        "description": "This is a public function and does not require signing. Retrieves market price for all symbols if no symbol is provided as query string parameter. If a symbol is provided then retrieves market-price for the symbol\n  URL Example : https://trade.coss.io/c/api/v1//market-price?symbol=ETH_BTC",
+        "servers": [
+          {
+            "url": "https://trade.coss.io/c/api/v1/"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "symbol",
+            "in": "query",
+            "description": "Retrieves market-price for all symbols if symbol is not provide in parameter otherwise retrieves information for symbol provided in",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Market Price Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketPriceArray"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dp/": {
+      "get": {
+        "tags": [
+          "Market"
+        ],
+        "summary": "Retrieve market depth information (Order book) for given symbol",
+        "description": "Specific pair id for retrieving depth in query string e.g. ?symbol=ETH_BTC. This API does not require signing.<br/> Example URL: https://engine.coss.io/api/v1/dp?symbol=ETH_BTC",
+        "servers": [
+          {
+            "url": "https://engine.coss.io/api/v1/"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "symbol",
+            "in": "query",
+            "description": "pair id to retrieve market depth",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Market Depth Response ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Depth"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ht/": {
+      "get": {
+        "tags": [
+          "Market"
+        ],
+        "summary": "Retrieve market information  for given symbol",
+        "description": "Specific pair id for retrieving market information stream in path e.g. ETH_BTC. This API does not require signing.<br/>  Example URL: https://engine.coss.io/api/v1/ht?symbol=ETH_BTC",
+        "servers": [
+          {
+            "url": "https://engine.coss.io/api/v1/"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "symbol",
+            "in": "query",
+            "description": "pair id to retrieve market information.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Trade History Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TradeHistoryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/order/add/ (HMAC SHA256)": {
+      "post": {
+        "tags": [
+          "Order management"
+        ],
+        "summary": "Place a new order",
+        "description": "Place a new order for order side(BUY/SELL) and order type (market/limit). This API requires signing of the payload. URL Example: https://trade.coss.io/c/api/v1/order/add",
+        "servers": [
+          {
+            "url": "https://trade.coss.io/c/api/v1/"
+          }
+        ],
+        "security": [
+          {
+            "APIKeyHeader": [],
+            "APISignatureHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Create Order Response ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Order"
+              }
+            }
+          },
+          "description": "The new order to be created",
+          "required": true
+        }
+      }
+    },
+    "/order/cancel/ (HMAC SHA256)": {
+      "delete": {
+        "tags": [
+          "Order management"
+        ],
+        "summary": "Cancel the open order",
+        "description": "Cancel an open order.  This API requires signing of the payload. URL Example: https://trade.coss.io/c/api/v1/order/cancel",
+        "servers": [
+          {
+            "url": "https://trade.coss.io/c/api/v1/"
+          }
+        ],
+        "security": [
+          {
+            "APIKeyHeader": [],
+            "APISignatureHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order Cancellation Successful.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancelOrderResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelOrder"
+              }
+            }
+          },
+          "description": "The order to be cancelled",
+          "required": true
+        }
+      }
+    },
+    "/order/details/ (HMAC SHA256)": {
+      "post": {
+        "tags": [
+          "Order management"
+        ],
+        "summary": "Get order detail for specific order.",
+        "description": "Get order details for specific order.  This API requires signing of the payload. URL Example: https://trade.coss.io/c/api/v1/order/details",
+        "servers": [
+          {
+            "url": "https://trade.coss.io/c/api/v1/"
+          }
+        ],
+        "security": [
+          {
+            "APIKeyHeader": [],
+            "APISignatureHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order Detail Response ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderDetail"
+              }
+            }
+          },
+          "description": "The order to retrieve the details",
+          "required": true
+        }
+      }
+    },
+    "/order/trade-detail (HMAC SHA256)": {
+      "post": {
+        "tags": [
+          "Order management"
+        ],
+        "summary": "Get order's trade details.",
+        "description": "Get trade details for an order. API requires signing of the payload. URL Example: https://trade.coss.io/c/api/v1/order/trade-detail",
+        "servers": [
+          {
+            "url": "https://trade.coss.io/c/api/v1/"
+          }
+        ],
+        "security": [
+          {
+            "APIKeyHeader": [],
+            "APISignatureHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Trade Detail Response ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TradeDetailsArray"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TradeDetailRequest"
+              }
+            }
+          },
+          "description": "The order to retrieve the trade details",
+          "required": true
+        }
+      }
+    },
+    "/order/list/open (HMAC SHA256)": {
+      "post": {
+        "tags": [
+          "Order management"
+        ],
+        "summary": "Get the list of open orders for user.",
+        "description": "Get current open orders for specific symbol OPEN and CANCELING.  This API requires signing of the payload. URL Example: https://trade.coss.io/c/api/v1/order/list/open",
+        "servers": [
+          {
+            "url": "https://trade.coss.io/c/api/v1/"
+          }
+        ],
+        "security": [
+          {
+            "APIKeyHeader": [],
+            "APISignatureHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order Detail Response ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "$ref": "#/components/requestBodies/OrderListRequest"
+        }
+      }
+    },
+    "/order/list/completed (HMAC SHA256)": {
+      "post": {
+        "tags": [
+          "Order management"
+        ],
+        "summary": "Get the list of completed orders for user.",
+        "description": "Get completed orders for specific symbol where order status is  FILLED, PARTIAL_FILL, or CANCELED URL Example: https://trade.coss.io/c/api/v1/order/list/completed",
+        "servers": [
+          {
+            "url": "https://trade.coss.io/c/api/v1/"
+          }
+        ],
+        "security": [
+          {
+            "APIKeyHeader": [],
+            "APISignatureHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order Detail Response ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "$ref": "#/components/requestBodies/OrderListRequest"
+        }
+      }
+    },
+    "/order/list/all (HMAC SHA256)": {
+      "post": {
+        "tags": [
+          "Order management"
+        ],
+        "summary": "Get the list of all orders for user.",
+        "description": "Get the list of all orders for user. URL Example: https://trade.coss.io/c/api/v1/order/list/all",
+        "servers": [
+          {
+            "url": "https://trade.coss.io/c/api/v1/"
+          }
+        ],
+        "security": [
+          {
+            "APIKeyHeader": [],
+            "APISignatureHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order Detail Response ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderAllResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderAllRequest"
+              }
+            }
+          },
+          "description": "The order request for retrieving all orders. This API requires signing.",
+          "required": true
+        }
+      }
+    }
+  },
+  "externalDocs": {
+    "description": "Find out more about Coss",
+    "url": "https://coss.io"
+  },
+  "servers": [
+    {
+      "url": "https://engine.coss.io/api/v1/"
+    },
+    {
+      "url": "https://trade.coss.io/c/api/v1/"
+    },
+    {
+      "url": "wss://engine.coss.io/ws/v1/"
+    }
+  ],
+  "components": {
+    "requestBodies": {
+      "OrderListRequest": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/OrderListRequest"
+            }
+          }
+        },
+        "description": "The order request for retrieving open orders. This API requires signing.",
+        "required": true
+      }
+    },
+    "securitySchemes": {
+      "APIKeyHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Authorisation",
+        "description": "The public key to be provided by user in Authorisation Header."
+      },
+      "APISignatureHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Signature",
+        "description": "The hmac256 signed payload provided by user in Signature header using their private key."
+      }
+    },
+    "schemas": {
+      "MarketPrice": {
+        "type": "object",
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "format": "string",
+            "example": "ETH_BTC"
+          },
+          "price": {
+            "type": "string",
+            "format": "string",
+            "example": "0.01234567"
+          },
+          "updated_time": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1538116102137
+          }
+        }
+      },
+      "MarketPriceArray": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MarketPrice"
+        }
+      },
+      "AccountBalance": {
+        "type": "object",
+        "properties": {
+          "currency_code": {
+            "type": "string",
+            "format": "string",
+            "example": "ETH_BTC"
+          },
+          "address": {
+            "type": "string",
+            "format": "string",
+            "example": "2MxctvXExQofAVqakPfBjKqVipfwTqwyQyF"
+          },
+          "total": {
+            "type": "string",
+            "format": "string",
+            "example": 1000.00275
+          },
+          "available": {
+            "type": "string",
+            "format": "string",
+            "example": 994.5022
+          },
+          "in_order": {
+            "type": "string",
+            "format": "string",
+            "example": 5.50055
+          }
+        }
+      },
+      "AccountBalanceArray": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AccountBalance"
+        }
+      },
+      "AccountDetails": {
+        "type": "object",
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "string",
+            "example": "3c05d5f4-41da-4c84-a167-XXXXXXXXX"
+          },
+          "email": {
+            "type": "string",
+            "format": "string",
+            "example": "xyz@email.com"
+          },
+          "phone": {
+            "type": "string",
+            "format": "string",
+            "example": 12345678
+          },
+          "enable_google_2fa": {
+            "type": "boolean",
+            "format": "boolean",
+            "example": true
+          },
+          "status": {
+            "type": "string",
+            "format": "string",
+            "example": "offline"
+          },
+          "create_at": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1533546246091
+          },
+          "nick_name": {
+            "type": "string",
+            "format": "string",
+            "example": "Nick name"
+          },
+          "chat_id": {
+            "type": "string",
+            "format": "string",
+            "example": "XXX@coss.io"
+          },
+          "chat_password": {
+            "type": "string",
+            "format": "string",
+            "example": "XXXXXx"
+          },
+          "country": {
+            "type": "string",
+            "format": "string",
+            "example": "US"
+          },
+          "language": {
+            "type": "string",
+            "format": "string",
+            "example": "EN"
+          },
+          "kyc_status": {
+            "type": "string",
+            "format": "string"
+          },
+          "kyc_level": {
+            "type": "string",
+            "format": "string",
+            "example": "level1"
+          },
+          "last_login_history": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "object",
+                "properties": {
+                  "timestamp": {
+                    "type": "integer",
+                    "format": "int64",
+                    "example": 1528199468
+                  },
+                  "machineIdentifier": {
+                    "type": "integer",
+                    "format": "int",
+                    "example": 819034
+                  },
+                  "processIdentifier": {
+                    "type": "integer",
+                    "format": "int",
+                    "example": 10145
+                  },
+                  "counter": {
+                    "type": "integer",
+                    "format": "int",
+                    "example": 6683435
+                  },
+                  "time": {
+                    "type": "integer",
+                    "format": "int64",
+                    "example": 1528199468000
+                  },
+                  "date": {
+                    "type": "integer",
+                    "format": "int64",
+                    "example": 1528199468000
+                  },
+                  "timeSecond": {
+                    "type": "integer",
+                    "format": "int64",
+                    "example": 1528199468
+                  }
+                }
+              },
+              "account_id": {
+                "type": "string",
+                "format": "string",
+                "example": "3c05d5f4-41da-4c84-a167-XXXXXXXXX"
+              },
+              "nick_name": {
+                "type": "string",
+                "format": "string",
+                "example": "Nickname "
+              },
+              "email": {
+                "type": "string",
+                "format": "string",
+                "example": "abc@email.com "
+              },
+              "ip_address": {
+                "type": "string",
+                "format": "string",
+                "example": "172.18.0.6"
+              },
+              "login_at": {
+                "type": "integer",
+                "format": "int64",
+                "example": 1540278841682
+              },
+              "os_name": {
+                "type": "string",
+                "format": "string",
+                "example": "Mac OS X"
+              },
+              "browser_name": {
+                "type": "string",
+                "format": "string",
+                "example": "Country"
+              },
+              "country": {
+                "type": "string",
+                "format": "string",
+                "example": "SG"
+              },
+              "city": {
+                "type": "string",
+                "format": "string",
+                "example": "SG"
+              },
+              "sentEmail": {
+                "type": "boolean",
+                "example": false
+              }
+            }
+          },
+          "commission_status": {
+            "type": "boolean",
+            "example": false
+          },
+          "allow_order": {
+            "type": "integer",
+            "format": "int",
+            "example": 1
+          },
+          "disable_withdraw": {
+            "type": "integer",
+            "format": "int",
+            "example": 0
+          },
+          "referral_id": {
+            "type": "string",
+            "format": "string",
+            "example": "XXXXX"
+          },
+          "chat_server": {
+            "type": "string",
+            "format": "string"
+          },
+          "exchange_fee": {
+            "type": "object",
+            "properties": {
+              "standard_fee": {
+                "type": "string",
+                "format": "string",
+                "example": 0.2
+              }
+            }
+          }
+        }
+      },
+      "Depth": {
+        "type": "object",
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "format": "string",
+            "example": "COSS_ETH"
+          },
+          "limit": {
+            "type": "integer",
+            "format": "int32",
+            "example": 10
+          },
+          "asks": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "example": [
+                "0.12345678",
+                "0.00234567"
+              ]
+            }
+          },
+          "bids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "example": [
+                "0.12345678",
+                "0.00234567"
+              ]
+            }
+          },
+          "time": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1538114348750
+          }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "properties": {
+          "order_symbol": {
+            "type": "string",
+            "format": "string",
+            "example": "ETH_BTC"
+          },
+          "order_price": {
+            "type": "string",
+            "format": "string",
+            "example": "1.00234567"
+          },
+          "stop_price": {
+            "type": "string",
+            "format": "string",
+            "example": "1.00234555"
+          },
+          "order_side": {
+            "type": "string",
+            "description": "Order side (BUY or SELL)",
+            "enum": [
+              "BUY",
+              "SELL"
+            ],
+            "example": "BUY"
+          },
+          "order_size": {
+            "type": "string",
+            "format": "string",
+            "example": "1000"
+          },
+          "type": {
+            "type": "string",
+            "description": "order type (e.g. limit) ",
+            "enum": [
+              "market",
+              "limit"
+            ],
+            "example": "limit"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1538114348750
+          },
+          "recvWindow": {
+            "type": "integer",
+            "format": "int32",
+            "example": 5000
+          }
+        },
+        "required": [
+          "order_symbol",
+          "order_price",
+          "order_side",
+          "order_size",
+          "type",
+          "timestamp"
+        ]
+      },
+      "OrderDetail": {
+        "type": "object",
+        "properties": {
+          "order_id": {
+            "type": "string",
+            "format": "string",
+            "example": "9e5ae4dd-3369-401d-81f5-dff985e1cxyz"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1538114348750
+          },
+          "recvWindow": {
+            "type": "integer",
+            "format": "int64",
+            "example": 5000
+          }
+        },
+        "required": [
+          "order_id",
+          "timestamp"
+        ]
+      },
+      "OrderResponse": {
+        "type": "object",
+        "properties": {
+          "order_id": {
+            "type": "string",
+            "format": "string",
+            "example": "9e5ae4dd-3369-401d-81f5-dff985e1c4ty"
+          },
+          "account_id": {
+            "type": "string",
+            "format": "string",
+            "example": "9e5ae4dd-3369-401d-81f5-dff985e1c4a6"
+          },
+          "order_symbol": {
+            "type": "string",
+            "format": "string",
+            "example": "ETH_BTC"
+          },
+          "order_side": {
+            "type": "string",
+            "format": "string",
+            "example": "BUY"
+          },
+          "status": {
+            "type": "string",
+            "format": "string",
+            "enum": [
+              "OPEN",
+              "CANCELLED",
+              "FILLED",
+              "PARTIAL_FILL",
+              "CANCELLING"
+            ],
+            "example": "OPEN"
+          },
+          "createTime": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1538114348750
+          },
+          "type": {
+            "type": "string",
+            "format": "string",
+            "example": "limit"
+          },
+          "order_price": {
+            "type": "string",
+            "format": "string",
+            "example": "0.12345678"
+          },
+          "order_size": {
+            "type": "string",
+            "format": "string",
+            "example": "10.12345678"
+          },
+          "executed": {
+            "type": "string",
+            "format": "string",
+            "example": "0"
+          },
+          "stop_price": {
+            "type": "string",
+            "format": "string",
+            "example": "02.12345678"
+          },
+          "avg": {
+            "type": "string",
+            "format": "string",
+            "example": "1.12345678"
+          },
+          "total": {
+            "type": "string",
+            "format": "string",
+            "example": "2.12345678"
+          }
+        }
+      },
+      "CancelOrder": {
+        "type": "object",
+        "properties": {
+          "order_id": {
+            "type": "string",
+            "format": "string",
+            "example": "9e5ae4dd-3369-401d-81f5-dff985e1c4e7"
+          },
+          "order_symbol": {
+            "type": "string",
+            "format": "string",
+            "example": "ETH_BTC"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1538114348750
+          },
+          "recvWindow": {
+            "type": "integer",
+            "format": "int64",
+            "example": 5000
+          }
+        },
+        "required": [
+          "order_id",
+          "order_symbol",
+          "timestamp"
+        ]
+      },
+      "CancelOrderResponse": {
+        "type": "object",
+        "properties": {
+          "order_id": {
+            "type": "string",
+            "format": "string",
+            "example": "9e5ae4dd-3369-401d-81f5-dff985e1c4x7"
+          },
+          "order_symbol": {
+            "type": "string",
+            "format": "string",
+            "example": "ETH_BTC"
+          }
+        }
+      },
+      "OrderListRequest": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32",
+            "example": 10
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "example": 0
+          },
+          "symbol": {
+            "type": "string",
+            "format": "string",
+            "example": "ETH_BTC"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1429514463299
+          },
+          "recvWindow": {
+            "type": "integer",
+            "format": "int32",
+            "example": 5000
+          }
+        },
+        "required": [
+          "symbol",
+          "timestamp"
+        ]
+      },
+      "OrderListResponse": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "format": "int32",
+            "example": 2
+          },
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderResponse"
+            }
+          }
+        }
+      },
+      "OrderAllRequest": {
+        "type": "object",
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "format": "string",
+            "example": "ETH_BTC"
+          },
+          "from_id": {
+            "type": "string",
+            "format": "string",
+            "example": "order id to fetch from"
+          },
+          "limit": {
+            "type": "integer",
+            "format": "int32",
+            "example": "default and maximum is 50"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1530682938651
+          },
+          "recvWindow": {
+            "type": "integer",
+            "format": "int32",
+            "example": 5000
+          }
+        },
+        "required": [
+          "symbol",
+          "timestamp"
+        ]
+      },
+      "OrderAllResponse": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/OrderResponse"
+        }
+      },
+      "RateLimit": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "format": "string",
+            "example": "REQUESTS"
+          },
+          "interval": {
+            "type": "string",
+            "format": "string",
+            "example": "MINUTE"
+          },
+          "limit": {
+            "type": "integer",
+            "format": "int32",
+            "example": 60
+          }
+        }
+      },
+      "BaseCurrency": {
+        "type": "object",
+        "properties": {
+          "currency_code": {
+            "type": "string",
+            "format": "string",
+            "example": "COSS"
+          },
+          "minimum_total_order": {
+            "type": "string",
+            "format": "string",
+            "example": 100
+          }
+        }
+      },
+      "Coin": {
+        "type": "object",
+        "properties": {
+          "currency_code": {
+            "type": "string",
+            "format": "string",
+            "example": "USDT"
+          },
+          "name": {
+            "type": "string",
+            "format": "string",
+            "example": "Tether"
+          },
+          "minimum_order_amount": {
+            "type": "string",
+            "format": "string",
+            "example": 1
+          }
+        }
+      },
+      "Symbol": {
+        "type": "object",
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "format": "string",
+            "example": "COSS_ETH"
+          },
+          "amount_limit_decimal": {
+            "type": "integer",
+            "format": "int32",
+            "example": 0
+          },
+          "price_limit_decimal": {
+            "type": "integer",
+            "format": "int32",
+            "example": 8
+          },
+          "allow_trading": {
+            "type": "boolean",
+            "format": "boolean",
+            "example": true
+          }
+        }
+      },
+      "ExchangeInfo": {
+        "type": "object",
+        "properties": {
+          "timezone": {
+            "type": "string",
+            "format": "string",
+            "example": "UTC"
+          },
+          "server_time": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1530683054384
+          },
+          "rate_limits": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RateLimit"
+            }
+          },
+          "base_currencies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BaseCurrency"
+            }
+          },
+          "coins": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Coin"
+            }
+          },
+          "symbols": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Symbol"
+            }
+          }
+        }
+      },
+      "MarketSummariesResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "string",
+            "format": "string",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "format": "string",
+            "example": null
+          },
+          "result": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MarketSummary"
+            }
+          },
+          "volumes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CoinVolume"
+            }
+          },
+          "t": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1531208813959
+          }
+        }
+      },
+      "MarketSummary": {
+        "type": "object",
+        "properties": {
+          "MarketName": {
+            "type": "string",
+            "format": "string",
+            "example": "ETH_BTC"
+          },
+          "High": {
+            "type": "integer",
+            "format": "int64",
+            "example": 0.00018348
+          },
+          "Low": {
+            "type": "integer",
+            "format": "int64",
+            "example": 0.00015765
+          },
+          "BaseVolume": {
+            "type": "integer",
+            "format": "int64",
+            "example": 240.82775523
+          },
+          "Last": {
+            "type": "integer",
+            "format": "int64",
+            "example": 0.00017166
+          },
+          "TimeStamp": {
+            "type": "string",
+            "format": "string",
+            "example": "02018-07-10T07:46:47.958Z"
+          },
+          "Volume": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1426236.4862518935
+          },
+          "Bid": {
+            "type": "string",
+            "format": "string",
+            "example": 14262360.00017663
+          },
+          "Ask": {
+            "type": "string",
+            "format": "string",
+            "example": 0.00017001
+          },
+          "PrevDay": {
+            "type": "integer",
+            "format": "int64",
+            "example": 0.00017166
+          }
+        }
+      },
+      "CoinVolume": {
+        "type": "object",
+        "properties": {
+          "CoinName": {
+            "type": "string",
+            "format": "string",
+            "example": "BTC"
+          },
+          "Volume": {
+            "type": "integer",
+            "format": "int64",
+            "example": 571.64749041
+          }
+        }
+      },
+      "TradeHistoryResponse": {
+        "type": "object",
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "format": "string",
+            "example": "ETH_BTC"
+          },
+          "limit": {
+            "type": "integer",
+            "format": "int",
+            "example": 100,
+            "description": "max number of records in array"
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TradeHistory"
+            }
+          },
+          "time": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1529298130192
+          }
+        }
+      },
+      "TradeHistory": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "string",
+            "example": 139638
+          },
+          "price": {
+            "type": "string",
+            "format": "string",
+            "example": "0.00001723"
+          },
+          "qty": {
+            "type": "string",
+            "format": "string",
+            "example": "81.00000000"
+          },
+          "isBuyerMaker": {
+            "type": "boolean",
+            "example": false
+          },
+          "time": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1529262196270
+          }
+        }
+      },
+      "ServerStatusInfo": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
+      "ServerTimeInfo": {
+        "type": "object",
+        "properties": {
+          "server_time": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1545196121361
+          }
+        }
+      },
+      "TradeDetailRequest": {
+        "type": "object",
+        "properties": {
+          "order_id": {
+            "type": "string",
+            "format": "string",
+            "example": "08098534-ae65-452e-9a84-5b79a5160b5g"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1545196121361
+          },
+          "recvWindow": {
+            "type": "integer",
+            "format": "int",
+            "example": 5000
+          }
+        }
+      },
+      "TradeDetail": {
+        "type": "object",
+        "properties": {
+          "hex_id": {
+            "type": "string",
+            "format": "string",
+            "example": "6e34eb38892faf4c3528ab89"
+          },
+          "symbol": {
+            "type": "string",
+            "format": "string",
+            "example": "COSS_ETH"
+          },
+          "order_id": {
+            "type": "string",
+            "format": "string",
+            "example": "08098534-ae65-452e-9a84-5b79a5160b5g"
+          },
+          "order_side": {
+            "type": "string",
+            "format": "string",
+            "example": "BUY"
+          },
+          "price": {
+            "type": "string",
+            "format": "string",
+            "example": "0.00064600"
+          },
+          "quantity": {
+            "type": "string",
+            "format": "string",
+            "example": "10"
+          },
+          "fee": {
+            "type": "string",
+            "format": "string",
+            "example": "0.00700000 COSS"
+          },
+          "total": {
+            "type": "string",
+            "format": "string",
+            "example": "0.00646000 ETH"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1545196121361
+          }
+        }
+      },
+      "TradeDetailsArray": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/TradeDetail"
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "format": "string",
+            "example": "400"
+          },
+          "error_description": {
+            "type": "string",
+            "format": "string",
+            "example": "INVALID_DATA"
+          }
+        }
+      }
+    }
+  }
+}

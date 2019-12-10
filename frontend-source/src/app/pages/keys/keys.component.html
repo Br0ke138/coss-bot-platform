@@ -1,0 +1,11 @@
+<div class="flex-container">
+  <mat-card *ngFor="let key of keys" [routerLink]="'/keys/' + key.id">
+    <p>Name: {{ key?.name }} </p>
+    <p>Public Key: {{ key?.public }} </p>
+    <p>Secret: {{ key?.secret }} </p>
+  </mat-card>
+
+  <mat-card (click)="createKey()">
+    Add Key
+  </mat-card>
+</div>

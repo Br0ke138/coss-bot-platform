@@ -1,0 +1,13 @@
+<mat-card>
+  <mat-card-title>Details</mat-card-title>
+  <p>Name: {{ key?.name }} </p>
+  <p>Name: {{ key?.public }} </p>
+  <p>Name: {{ key?.secret }} </p>
+</mat-card>
+
+<mat-card>
+  <mat-card-title>Action</mat-card-title>
+
+  <button mat-raised-button color="primary" (click)="removeKey()">Delete</button>
+
+</mat-card>

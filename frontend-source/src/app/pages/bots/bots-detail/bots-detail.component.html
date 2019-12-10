@@ -1,0 +1,88 @@
+<mat-card>
+  <mat-card-title>Details</mat-card-title>
+  <p>Name: {{ bot?.name }} </p>
+  <p>Type: {{ bot?.type }} </p>
+  <p>Status: {{ bot?.status }} </p>
+</mat-card>
+
+<mat-card>
+  <mat-card-title>Action</mat-card-title>
+
+  <button mat-raised-button color="primary" [disabled]="bot?.status === 'Running'" (click)="startBot()">Start</button>
+  <button mat-raised-button color="primary" [disabled]="bot?.status !== 'Running'" (click)="stopBot()">Cancel Orders and
+    Stop
+  </button>
+  <button mat-raised-button color="primary" [disabled]="bot?.status === 'Running'" (click)="removeBot()">Delete</button>
+
+</mat-card>
+
+<ng-container *ngIf="bot?.type === 'GRID'">
+  <mat-card>
+    <mat-card-title>Configuration</mat-card-title>
+
+    <div class="flex-container">
+      <form class="example-form" [formGroup]="form" >
+        <div *ngIf="bot?.status === 'Running'" style="padding-bottom: 4px;">
+          Bot has to be stopped to change the settings.
+        </div>
+
+        <mat-form-field class="example-full-width">
+          <mat-label>Pair</mat-label>
+          <mat-select formControlName="pair" [value]="form.get('pair').value">
+            <mat-option *ngFor="let symbol of symbols" [value]="symbol">
+              {{symbol}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+
+        <mat-form-field class="example-full-width">
+          <input matInput placeholder="Upper Wall" value="" formControlName="upperWall"
+                 [value]="form.get('upperWall').value">
+        </mat-form-field>
+
+        <mat-form-field class="example-full-width">
+          <input matInput placeholder="Lower Wall" value="" formControlName="lowerWall"
+                 [value]="form.get('lowerWall').value">
+        </mat-form-field>
+
+        <mat-form-field class="example-full-width">
+          <input matInput placeholder="Number of Grids" value="" formControlName="numberOfGrids"
+                 [value]="form.get('numberOfGrids').value">
+        </mat-form-field>
+
+        <mat-form-field class="example-full-width">
+          <input matInput placeholder="Amount per Grid" value="" formControlName="amountPerGrid"
+                 [value]="form.get('amountPerGrid').value">
+        </mat-form-field>
+
+        <button mat-raised-button color="primary"
+                [disabled]="bot?.status === 'Running' || !form.value.pair || !form.value.upperWall || !form.value.lowerWall || !form.value.numberOfGrids || !form.value.amountPerGrid"
+                (click)="saveConfig()">Save
+        </button>
+      </form>
+
+      <mat-spinner *ngIf="currentPair && !showChart" ></mat-spinner>
+      <apx-chart  *ngIf="showChart" [tooltip]="tooltip" [series]="series" [chart]="chart" [title]="title"
+                 [xaxis]="xAxis" [yaxis]="yAxis" [stroke]="stroke" [colors]="colors" [grid]="grid"
+                 [legend]="legend"></apx-chart>
+    </div>
+
+    <div class="flex-container">
+      <div >
+        <mat-list role="list">
+          <mat-list-item role="listitem" *ngFor="let grid of getBuyOrders()">{{ grid }}</mat-list-item>
+        </mat-list>
+      </div>
+
+      <div >
+        <mat-list role="list">
+          <mat-list-item role="listitem" *ngFor="let grid of getSellOrders()">{{ grid }}</mat-list-item>
+        </mat-list>
+      </div>
+    </div>
+
+
+  </mat-card>
+
+</ng-container>

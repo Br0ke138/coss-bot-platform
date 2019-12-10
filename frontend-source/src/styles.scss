@@ -1,0 +1,16 @@
+/* You can add global styles to this file, and also import other style files */
+@import '../node_modules/@angular/material/prebuilt-themes/pink-bluegrey.css';
+
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; background: #242424; }
+
+.sidenav-open {
+  .mat-toolbar-single-row {
+    padding-left: 16rem;
+  }
+}
+.sidenav-closed {
+  .mat-toolbar-single-row {
+    padding-left: 4rem;
+  }
+}

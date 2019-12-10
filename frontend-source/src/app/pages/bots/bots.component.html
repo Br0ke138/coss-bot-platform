@@ -1,0 +1,11 @@
+<div class="flex-container">
+  <mat-card *ngFor="let bot of bots" [routerLink]="'/bots/' + bot.id">
+    <p>Name: {{ bot?.name }} </p>
+    <p>Type: {{ bot?.type }} </p>
+    <p>Status: {{ bot?.status }} </p>
+  </mat-card>
+
+  <mat-card (click)="createBot()">
+    Add Bot
+  </mat-card>
+</div>
