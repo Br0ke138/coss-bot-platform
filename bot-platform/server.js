@@ -6,7 +6,7 @@ const path = require('path');
 const cors = require('cors');
 
 const {fork} = require('child_process');
-console.log("process.cwd() = " + process.cwd());
+console.log("Bot running in folder: " + process.cwd());
 // App
 const app = express();
 app.use(cors());
