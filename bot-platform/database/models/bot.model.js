@@ -1,5 +1,5 @@
 let bots = require('../data/bots.json');
-const filename = __dirname + '/../data/bots.json';
+const filename = process.cwd() + '/bots.json';
 const helper = require('../helpers/helper.js');
 
 function getBots() {

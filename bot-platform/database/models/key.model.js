@@ -1,5 +1,5 @@
 let keys = require('../data/keys.json');
-const filename = __dirname + '/../data/keys.json';
+const filename = process.cwd() + '/keys.json';
 const helper = require('../helpers/helper.js');
 
 function getKeys() {

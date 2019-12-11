@@ -1,5 +1,5 @@
 let orders = require('../data/orders.json');
-const filename = __dirname + '/../data/orders.json';
+const filename = process.cwd() + '/orders.json';
 const helper = require('../helpers/helper.js');
 
 function getOrders() {
