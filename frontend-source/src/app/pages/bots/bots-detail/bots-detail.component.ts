@@ -143,6 +143,7 @@ export class BotsDetailComponent implements OnInit {
 
   minOrderSize = 0;
   margin = 0;
+  gridsAll = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -219,12 +220,14 @@ export class BotsDetailComponent implements OnInit {
     });
   }
 
-  // stopBot() {
-  //   this.botsService.stopBot(this.bot.id);
-  //   this.bot = this.botsService.getBot(this.bot.id);
-  //   this.form.enable();
-  // }
-  //
+  stopBot() {
+    this.botsService.stopBot(this.bot.id).pipe(take(1)).subscribe(() => {
+      this.botsService.getBot(this.bot.id).pipe(take(1)).subscribe(bot => {
+        this.bot = bot;
+        this.form.disable();
+      });
+    });
+  }
 
   removeBot() {
     this.botsService.removeBot(this.bot.id).pipe(take(1)).subscribe(() => {
@@ -236,7 +239,9 @@ export class BotsDetailComponent implements OnInit {
   saveConfig() {
     const bot: Bot = this.bot;
     bot.config = this.form.value;
-    bot.config.grids = this.grids;
+    bot.config.grids = this.gridsAll;
+    bot.config.precisionPrice = this.precisionPrice;
+    bot.config.precisionAmount = this.precisionAmount;
 
     this.botsService.updateBot(this.bot.id, bot).pipe(take(1)).subscribe(update => {
       this.botsService.getBot(this.bot.id).pipe(take(1)).subscribe(bot => {
@@ -338,6 +343,7 @@ export class BotsDetailComponent implements OnInit {
         this.grids.push((Decimal.sub(upper, (Decimal.mul(this.margin, i).toNumber())).toNumber()));
       }
 
+      this.gridsAll = [].concat(this.grids);
       // tslint:disable-next-line:max-line-length
       const closest = this.grids.reduce((prev, curr) => (Math.abs(parseFloat(curr) - this.current) < Math.abs(parseFloat(prev) - this.current) ? curr : prev));
       this.grids.splice(this.grids.indexOf(closest), 1);

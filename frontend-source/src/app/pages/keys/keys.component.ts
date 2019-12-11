@@ -35,7 +35,6 @@ export class KeysComponent implements OnInit {
           secret: data.secret,
         };
         this.keysService.addKey(key).pipe(take(1)).subscribe(result => {
-          console.log(result);
           this.keysService.getKeys().pipe(take(1)).subscribe(keys => {
             this.keys = keys;
           }, err => {

@@ -32,17 +32,10 @@ export class BotsService {
   startBot(id: string) {
     return this.http.get('http://localhost:3000/botApi/start/' + id);
   }
-  //
-  // stopBot(id: string): boolean {
-  //   const botToStop = this.bots.find(bot => bot.id === id);
-  //   if (botToStop) {
-  //     botToStop.status = BotStatus.Stopped;
-  //     return true;
-  //   } else {
-  //     return false;
-  //   }
-  // }
-  //
+
+  stopBot(id: string) {
+    return this.http.get('http://localhost:3000/botApi/stop/' + id);
+  }
 
 }
 
@@ -73,5 +66,7 @@ export interface Config {
   lowerWall: string;
   numberOfGrids: string;
   amountPerGrid: string;
-  grids?: Array<string>;
+  grids?: Array<number>;
+  precisionPrice?: number;
+  precisionAmount?: number;
 }

@@ -45,7 +45,7 @@ app.use('/botApi/start/:id', (req, res) => {
         forked.onUnexpectedExit = function (code, signal) {
             console.log("Child process terminated with code: " + code);
         };
-        forked.on("exit", child.onUnexpectedExit);
+        forked.on("exit", forked.onUnexpectedExit);
 
         forked.shutdown = function () {
             this.removeListener("exit", this.onUnexpectedExit);
@@ -61,7 +61,7 @@ app.use('/botApi/start/:id', (req, res) => {
         res.send('Bot started');
     } else {
         if (bot.status !== 'Running') {
-            forked.send({action: 'start', id: req.params.id});
+            bot.bot.send({action: 'start', id: req.params.id});
             res.send('Bot started');
         } else {
             res.send('Bot already running');
@@ -76,12 +76,12 @@ app.use('/botApi/stop/:id', (req, res) => {
     if (!bot) {
         res.send('Bot not found');
     } else {
-        if (bot.status === 'Running') {
+        //if (bot.status === 'Running') {
             forked.send({action: 'stop', id: req.params.id});
             res.send('Bot will cancel orders and then exit');
-        } else {
-            res.send('Bot not running');
-        }
+        //} else {
+        //    res.send('Bot not running');
+        //}
     }
 });
 
@@ -102,7 +102,7 @@ app.use('/api/:route', (req, res) => {
     }
     url += req.url;
 
-    request(url, {json: true, proxy: 'http://proxy.rwe.com:8080'}, (err, resp, body) => {
+    request(url, {json: true}, (err, resp, body) => {
         res.header('Access-Control-Allow-Origin', '*');
         if (err) {
             res.status(500).json(err);
@@ -113,10 +113,10 @@ app.use('/api/:route', (req, res) => {
 });
 
 // Frontend
-// app.use(express.static(__dirname + '/frontend'));
-// app.use('*', function (req, res) {
-//     res.sendFile(path.join(__dirname, 'frontend/index.html'));
-// });
+app.use(express.static(__dirname + '/frontend'));
+app.use('*', function (req, res) {
+    res.sendFile(path.join(__dirname, 'frontend/index.html'));
+});
 
 // Start server
 const server = http.createServer(app);

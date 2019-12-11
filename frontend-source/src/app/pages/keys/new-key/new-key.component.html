@@ -11,10 +11,6 @@
     <input matInput placeholder="Private Key" value="" formControlName="secret">
   </mat-form-field>
 
-  <mat-form-field class="example-full-width">
-    <input matInput placeholder="Encrypt with Password" value="" formControlName="password">
-  </mat-form-field>
-
-  <button mat-raised-button color="primary" [disabled]="form.value.name === null || form.value.type === null || form.value.pair === null" (click)="dialogRef.close(form.value)">Create</button>
+  <button mat-raised-button color="primary" [disabled]="form.value.name === null || form.value.public === null || form.value.secret === null" (click)="dialogRef.close(form.value)">Create</button>
   <button mat-button (click)="dialogRef.close(null)">Abort</button>
 </form>

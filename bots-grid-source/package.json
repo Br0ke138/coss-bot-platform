@@ -22,7 +22,8 @@
     "request-promise-native": "^1.0.8",
     "table": "^5.4.6",
     "ts-node-dev": "^1.0.0-pre.44",
-    "typescript": "^3.7.2"
+    "typescript": "^3.7.2",
+    "decimal.js": "latest"
   },
   "devDependencies": {
     "@types/crypto-js": "^3.1.43",
