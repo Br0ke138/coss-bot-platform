@@ -46,7 +46,7 @@ export interface Bot {
   status?: BotStatus;
   orders?: Array<string>;
   config?: Config;
-  key?: {public: string, secret: string};
+  keys: {id: string, name: string};
 }
 
 export enum BotTypes {

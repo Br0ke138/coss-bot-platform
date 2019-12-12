@@ -23,6 +23,11 @@ export class SidenavComponent {
       title: 'Keys',
       icon: 'view_list',
       path: 'keys',
+    },
+    {
+      title: 'Telegram',
+      icon: 'view_list',
+      path: 'telegram',
     }
   ];
 

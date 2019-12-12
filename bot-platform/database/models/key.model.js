@@ -1,6 +1,6 @@
-let keys = require('../data/keys.json');
-const filename = process.cwd() + '/keys.json';
 const helper = require('../helpers/helper.js');
+const filename = process.cwd() + '/keys.json';
+let keys = helper.readJSONFile(filename);
 
 function getKeys() {
     return new Promise((resolve, reject) => {

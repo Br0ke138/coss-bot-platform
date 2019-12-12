@@ -184,9 +184,6 @@ export class BotsDetailComponent implements OnInit {
       this.botsService.getBot(params['id']).pipe(take(1)).subscribe(bot => {
         this.bot = bot;
         if (this.bot) {
-          if (this.bot.status === 'Running') {
-            this.form.disable();
-          }
           if (this.bot.config) {
             this.form = new FormGroup({
               pair: new FormControl(this.bot.config.pair),
@@ -204,6 +201,9 @@ export class BotsDetailComponent implements OnInit {
               amountPerGrid: new FormControl(),
             });
           }
+          if (this.bot.status === 'Running') {
+            this.form.disable();
+          }
         }
       });
     });
@@ -213,6 +213,7 @@ export class BotsDetailComponent implements OnInit {
 
   startBot() {
     this.botsService.startBot(this.bot.id).pipe(take(1)).subscribe(() => {
+      console.log('asdjnsdfgkjd');
       this.botsService.getBot(this.bot.id).pipe(take(1)).subscribe(bot => {
         this.bot = bot;
         this.form.disable();

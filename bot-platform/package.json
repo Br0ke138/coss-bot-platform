@@ -15,6 +15,7 @@
     "decimal.js": "^10.2.0",
     "express": "^4.17.1",
     "http": "0.0.0",
+    "node-telegram-bot-api": "^0.40.0",
     "path": "^0.12.7",
     "querystring": "^0.2.0",
     "request": "^2.88.0",

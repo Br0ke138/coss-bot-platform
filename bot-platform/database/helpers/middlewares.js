@@ -28,8 +28,14 @@ function checkFieldsKey(req, res, next) {
     }
 }
 
+function checkFieldsTelegram(req, res, next) {
+    const {botId, chatId} = req.body;
+    next()
+}
+
 module.exports = {
     checkFieldsOrder,
     checkFieldsBot,
-    checkFieldsKey
+    checkFieldsKey,
+    checkFieldsTelegram
 };

@@ -15,7 +15,7 @@
   <mat-form-field class="example-full-width">
     <mat-label>Api Key Set</mat-label>
     <mat-select formControlName="keys">
-      <mat-option *ngFor="let key of keys" [value]="{public: key.public, secret: key.secret}">
+      <mat-option *ngFor="let key of keys" [value]="{id: key.id, name: key.name}">
         {{ key.name }}
       </mat-option>
     </mat-select>

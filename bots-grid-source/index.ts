@@ -10,7 +10,7 @@ export interface Bot {
     status?: BotStatus;
     orders?: Array<string>;
     config?: Config;
-    keys: {public: string, secret: string};
+    keys: {id: string, name: string};
 }
 
 export enum BotTypes {
@@ -35,6 +35,14 @@ export interface Config {
     precisionAmount?: number;
 }
 
+export interface Key {
+    id?: number;
+    name: string;
+    public: string;
+    secret: string;
+}
+let botId: string;
+let botName: string;
 let config: Config;
 let price: number;
 let cossApi: CossApiService;
@@ -44,29 +52,25 @@ let stop = false;
 
 process.on('message', async (msg) => {
     if (msg.action === 'start') {
+        stop = false;
+        botId = msg.id;
         // @ts-ignore
-        process.send('Bot started');
+        console.log('Bot started', botId);
         try {
-            const bot: Bot = await request.get('http://localhost:3000/db/bots/' + msg.id, {json: true});
-            // @ts-ignore
-            process.send(bot);
+            const bot: Bot = await request.get('http://localhost:3000/db/bots/' + botId, {json: true});
             if (bot.config) {
                 config = bot.config;
-                // @ts-ignore
-                process.send(config);
+                botName = bot.name;
 
-                cossApi = new CossApiService(bot.keys.public, bot.keys.secret);
-                // @ts-ignore
-                process.send(cossApi);
+                await sendTelegram(botName + ' started on pair: ' + config.pair);
+                const keys: Key = await request.get('http://localhost:3000/db/keys/'+ bot.keys.id, {json: true});
+                cossApi = new CossApiService(keys.public, keys.secret);
+
                 try {
-                    // @ts-ignore
-                    process.send('price... ');
                     price = parseFloat((await cossApi.getMarketPrice(config.pair))[0].price);
-                    // @ts-ignore
-                    process.send('price: ' + price);
                 } catch (e) {
                     // @ts-ignore
-                    process.send("Unable to fetch price");
+                    console.log("Unable to fetch price", botId);
                     process.exit(0);
                 }
 
@@ -82,6 +86,12 @@ process.on('message', async (msg) => {
                             await placeOrder(parseFloat(grid) > price ? 'SELL' : 'BUY', grid.toString(), Decimal.div(config.amountPerGrid, grid).toNumber().toFixed(config.precisionAmount), config.pair);
                         } catch (e) {
                             console.log(e);
+                            console.log('Failed to place all orders. Bot will cancel all orders it made');
+                            await sendTelegram(botName + ' failed to place all orders and will cancel already created orders');
+                            await cancelAllOrders();
+                            console.log('All orders canceled. Bot will enter status stopped');
+                            await sendTelegram(botName + ' canceled all orders');
+                            await changeBotStatus(BotStatus.Stopped);
                         }
                     }
 
@@ -89,14 +99,32 @@ process.on('message', async (msg) => {
                 }
             }
         } catch (e) {
-            // @ts-ignore
-            process.send('err' + e);
+            await changeBotStatus(BotStatus.Crashed);
+            console.log('Failed on startup. Bot will enter status Crashed');
+            console.log(e);
         }
     }
     if (msg.action === 'stop') {
         stop = true;
     }
 });
+
+
+
+async function sendTelegram(text: string) {
+    await request.post('http://localhost:3000/telegram', {body: text});
+}
+
+async function changeBotStatus(status: BotStatus) {
+    const bot: Bot = await request.get('http://localhost:3000/db/bots/' + botId, {json: true});
+    bot.status = status;
+    await request.put({
+        url: 'http://localhost:3000/db/bots/' + botId,
+        body: bot,
+        json: true
+    });
+    await sendTelegram(botName + ' changed status: ' + status);
+}
 
 
 async function checkOrders() {
@@ -126,6 +154,7 @@ async function checkOrders() {
 
             if (orders[i].status.toUpperCase() === "FILLED") {
                 console.log("Found filled order", orders[i]);
+                await sendTelegram('Order filled: \n\n' + JSON.stringify(orders[i], null, 2));
                 if (config.grids) {
                     let index = config.grids.indexOf(parseFloat(orders[i].order_price));
 
@@ -136,6 +165,7 @@ async function checkOrders() {
                         } catch (e) {
                             orders[i].status = "PARTIAL_FILL";
                             console.log(e);
+                            await sendTelegram('Failed to place matching order. Will retry next cycle');
                         }
                     } else {
                         index++;
@@ -144,6 +174,7 @@ async function checkOrders() {
                         } catch (e) {
                             orders[i].status = "PARTIAL_FILL";
                             console.log(e);
+                            await sendTelegram('Failed to place matching order. Will retry next cycle');
                         }
                     }
                 }
@@ -155,10 +186,12 @@ async function checkOrders() {
     if (stop) {
         try {
             await cancelAllOrders();
+            await changeBotStatus(BotStatus.Stopped);
+            console.log('All orders canceled. Bot will enter status stopped');
             process.exit(0);
         } catch (e) {
-            // @ts-ignore
-            process.send({err: 'Failed to cancel orders'});
+            await changeBotStatus(BotStatus.Crashed);
+            console.log('Failed to cancel all orders. Bot will enter status crashed');
         }
     } else {
         await checkOrders();
@@ -190,7 +223,8 @@ async function placeOrder(side: 'SELL' | 'BUY', price: string, amount: string, s
                 });
 
                 if (newOrder && newOrder.order_id) {
-                    console.log('Placed ' + newOrder.order_side + ' Order at ' + newOrder.order_price);
+                    console.log(orderToPlace);
+                    await sendTelegram(JSON.stringify(orderToPlace, undefined, 2));
                     orders.push(newOrder);
                     resolve(newOrder);
                     break;
@@ -200,6 +234,7 @@ async function placeOrder(side: 'SELL' | 'BUY', price: string, amount: string, s
                     }
                 }
             } catch (e) {
+                console.log(e);
                 if (i === 2) {
                     reject('Unable to place order: ' + JSON.stringify(orderToPlace));
                 }
@@ -221,6 +256,7 @@ async function cancelOrder(order: OrderResponse): Promise<boolean> {
 
                 if (canceledOrder && canceledOrder.order_id) {
                     console.log('Canceled Order: ' + order.order_id);
+                    await sendTelegram('Canceled Order: ' + order.order_id);
                     const index = orders.indexOf(order);
                     orders.splice(index, 1);
                     resolve(true);

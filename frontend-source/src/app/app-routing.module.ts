@@ -5,6 +5,7 @@ import {BotsComponent} from './pages/bots/bots.component';
 import {BotsDetailComponent} from './pages/bots/bots-detail/bots-detail.component';
 import {KeysComponent} from './pages/keys/keys.component';
 import {KeysDetailComponent} from './pages/keys/keys-detail/keys-detail.component';
+import {TelegramComponent} from './pages/telegram/telegram.component';
 
 
 const routes: Routes = [
@@ -27,7 +28,11 @@ const routes: Routes = [
   {
     path: 'keys/:id',
     component: KeysDetailComponent
-  }
+  },
+  {
+    path: 'telegram',
+    component: TelegramComponent
+  },
 ];
 
 @NgModule({

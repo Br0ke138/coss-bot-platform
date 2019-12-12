@@ -28,9 +28,26 @@ function writeJSONFile(filename, content) {
     })
 }
 
+function readJSONFile(filename) {
+    try {
+        return JSON.parse(fs.readFileSync(filename));
+    } catch (e) {
+        if (e.code === 'ENOENT') {
+            console.log('Bot will create ' + filename + '.json to store data');
+            writeJSONFile(filename, []);
+        } else {
+            console.log(e);
+            console.log('It seems an error occured. Its not guaranteed that the bot works!');
+        }
+        return [];
+    }
+
+}
+
 module.exports = {
     getNewId,
     newDate,
     mustBeInArray,
-    writeJSONFile
+    writeJSONFile,
+    readJSONFile
 };

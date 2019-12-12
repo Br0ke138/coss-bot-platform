@@ -1,0 +1,13 @@
+<mat-card *ngIf="form">
+  <form class="example-form" [formGroup]="form">
+    <mat-form-field class="example-full-width">
+      <input matInput placeholder="Bot Id" value="" formControlName="botId">
+    </mat-form-field>
+
+    <mat-form-field class="example-full-width">
+      <input matInput placeholder="Public Key" value="" formControlName="chatId">
+    </mat-form-field>
+
+    <button mat-button mat-raised-button color="primary" (click)="save()">Save</button>
+  </form>
+</mat-card>

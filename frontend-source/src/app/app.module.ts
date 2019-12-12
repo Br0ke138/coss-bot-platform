@@ -31,6 +31,7 @@ import {NgApexchartsModule} from 'ng-apexcharts';
 import {HttpClientModule} from '@angular/common/http';
 import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
 import { OrderTableComponent } from './pages/bots/bots-detail/order-table/order-table.component';
+import { TelegramComponent } from './pages/telegram/telegram.component';
 
 @NgModule({
   declarations: [
@@ -45,7 +46,8 @@ import { OrderTableComponent } from './pages/bots/bots-detail/order-table/order-
     KeysComponent,
     KeysDetailComponent,
     NewKeyComponent,
-    OrderTableComponent
+    OrderTableComponent,
+    TelegramComponent
   ],
   imports: [
     BrowserModule,

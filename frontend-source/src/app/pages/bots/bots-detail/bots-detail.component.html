@@ -57,7 +57,7 @@
         </mat-form-field>
 
         <button mat-raised-button color="primary"
-                [disabled]="form.value.amountPerGrid < minOrderSize || bot?.status === 'Running' || !form.value.pair || !form.value.upperWall || !form.value.lowerWall || !form.value.numberOfGrids || !form.value.amountPerGrid"
+                [disabled]="gridsAll.length === 0 || form.value.amountPerGrid < minOrderSize || bot?.status === 'Running' || !form.value.pair || !form.value.upperWall || !form.value.lowerWall || !form.value.numberOfGrids || !form.value.amountPerGrid"
                 (click)="saveConfig()">Save
         </button>
 

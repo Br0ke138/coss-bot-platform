@@ -4,6 +4,7 @@ const http = require('http');
 const request = require('request');
 const path = require('path');
 const cors = require('cors');
+const router = express.Router();
 
 const {fork} = require('child_process');
 console.log("Bot running in folder: " + process.cwd());
@@ -19,6 +20,30 @@ app.use(require('./database/routes/index.routes'));
 
 const bots = [];
 
+const TelegramBot = require('node-telegram-bot-api');
+let teleBot;
+let chatId;
+
+initTelegram();
+async function initTelegram() {
+    if (!teleBot) {
+        const telegram = await request.get('http://localhost:3000/db/telegrams', {json: true});
+        if (telegram.length > 0) {
+            teleBot = new TelegramBot(telegram[0].botId, {
+                polling: true
+            });
+
+            teleBot.onText(/\/start/i, (msg, match) => {
+                const chatId = msg.chat.id;
+                teleBot.sendMessage(chatId, chatId);
+            });
+            if (telegram[0].chatId && telegram[0].chatId !== "") {
+                chatId = telegram[0].chatId;
+            }
+        }
+    }
+}
+
 process.once("SIGTERM", function () {
     process.exit(0);
 });
@@ -31,12 +56,12 @@ process.once("exit", function () {
     })
 });
 
-app.use('/botApi/start/:id', (req, res) => {
+app.use('/botApi/start/:id', async (req, res) => {
     const bot = bots.find(bot => {
         return bot.id === req.params.id;
     });
     if (!bot) {
-        const forked = fork(`${__dirname}/Bots/Grid/index.js`);
+        const forked = fork(process.cwd() + '/Bots/Grid/index.js');
 
         forked.on('message', (msg) => {
             console.log('Message from child', msg);
@@ -52,20 +77,41 @@ app.use('/botApi/start/:id', (req, res) => {
             this.kill("SIGTERM");
         };
 
-        bots.push({
+        const bot = {
             id: req.params.id,
             bot: forked
-        });
+        };
+        bots.push(bot);
 
         forked.send({action: 'start', id: req.params.id});
-        res.send('Bot started');
+        request.get('http://localhost:3000/db/bots/' + bot.id, {json: true}, (err, resp, body) => {
+            body.status = 'Running';
+            request.put('http://localhost:3000/db/bots/' + bot.id, {body: body, json: true}, (err, resp, body) => {
+                if (err) {
+                    res.status(500).json({err: true, msg: 'Failed to start bot'});
+                } else {
+                    res.status(200).json({err: true, msg: 'Bot started'});
+                }
+            });
+        });
+
     } else {
-        if (bot.status !== 'Running') {
-            bot.bot.send({action: 'start', id: req.params.id});
-            res.send('Bot started');
-        } else {
-            res.send('Bot already running');
-        }
+        request.get('http://localhost:3000/db/bots/' + bot.id, {json: true}, (err, resp, body) => {
+            if (body.status === 'Running') {
+                res.status(400).json({err: false, msg: 'Bot already running'});
+            } else {
+                bot.bot.send({action: 'start', id: bot.id});
+
+                body.status = 'Running';
+                request.put('http://localhost:3000/db/bots/' + bot.id, {body: body, json: true}, (err, resp, body) => {
+                    if (err) {
+                        res.status(500).json({err: true, msg: 'Failed to start bot'});
+                    } else {
+                        res.status(200).json({err: true, msg: 'Bot started'});
+                    }
+                });
+            }
+        });
     }
 });
 
@@ -76,14 +122,27 @@ app.use('/botApi/stop/:id', (req, res) => {
     if (!bot) {
         res.send('Bot not found');
     } else {
-        //if (bot.status === 'Running') {
-            forked.send({action: 'stop', id: req.params.id});
-            res.send('Bot will cancel orders and then exit');
-        //} else {
-        //    res.send('Bot not running');
-        //}
+        bot.bot.send({action: 'stop', id: req.params.id});
+        res.send('Bot will cancel orders and then exit');
     }
 });
+
+function sendTelegram(text) {
+    if (teleBot && chatId) {
+        teleBot.sendMessage(chatId, text);
+    }
+}
+
+router.post('/telegram', async (req, res) => {
+    await sendTelegram(req.body);
+    res.send('OK');
+});
+
+router.get('/initTelegram', async (req, res) => {
+    await initTelegram();
+    res.send('OK');
+});
+
 
 // Public api (Because of cors)
 app.use('/api/:route', (req, res) => {

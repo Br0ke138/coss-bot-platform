@@ -1,6 +1,6 @@
-let orders = require('../data/orders.json');
-const filename = process.cwd() + '/orders.json';
 const helper = require('../helpers/helper.js');
+const filename = process.cwd() + '/orders.json';
+let orders = helper.readJSONFile(filename);
 
 function getOrders() {
     return new Promise((resolve, reject) => {

@@ -1,6 +1,6 @@
-let bots = require('../data/bots.json');
-const filename = process.cwd() + '/bots.json';
 const helper = require('../helpers/helper.js');
+const filename = process.cwd() + '/bots.json';
+let bots = helper.readJSONFile(filename);
 
 function getBots() {
     return new Promise((resolve, reject) => {
