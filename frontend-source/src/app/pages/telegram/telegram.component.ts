@@ -26,9 +26,10 @@ export class TelegramComponent implements OnInit {
         });
       } else {
         this.form = new FormGroup({
-          botId: new FormControl(""),
-          chatId: new FormControl(""),
+          botId: new FormControl(''),
+          chatId: new FormControl(''),
         });
+        console.log(this.form.value);
       }
     });
   }
@@ -38,7 +39,7 @@ export class TelegramComponent implements OnInit {
       this.http.put('http://localhost:3000/db/telegrams/' + this.telegram.id, Object.assign(this.telegram, this.form.value)).pipe(take(1)).subscribe(result => {
         console.log(result);
 
-        this.http.get('http://localhost:3000/db/initTelegram/').pipe(take(1)).subscribe(result => {
+        this.http.get('http://localhost:3000/initTelegram/').pipe(take(1)).subscribe(result => {
           console.log(result);
         })
       })
@@ -46,7 +47,7 @@ export class TelegramComponent implements OnInit {
       this.http.post('http://localhost:3000/db/telegrams/', this.form.value).pipe(take(1)).subscribe(result => {
         console.log(result);
 
-        this.http.get('http://localhost:3000/db/initTelegram/').pipe(take(1)).subscribe(result => {
+        this.http.get('http://localhost:3000/initTelegram/').pipe(take(1)).subscribe(result => {
           console.log(result);
         })
       })

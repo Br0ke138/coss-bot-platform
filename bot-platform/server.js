@@ -1,9 +1,13 @@
 // Import packages
+process.env.NTBA_FIX_319 = 1;
+const TelegramBot = require('node-telegram-bot-api');
 const express = require('express');
 const http = require('http');
 const request = require('request');
+const requestPromise = require("request-promise-native");
 const path = require('path');
 const cors = require('cors');
+const helper = require("./database/helpers/helper");
 const router = express.Router();
 
 const {fork} = require('child_process');
@@ -20,28 +24,31 @@ app.use(require('./database/routes/index.routes'));
 
 const bots = [];
 
-const TelegramBot = require('node-telegram-bot-api');
+
 let teleBot;
 let chatId;
 
 initTelegram();
-async function initTelegram() {
-    if (!teleBot) {
-        const telegram = await request.get('http://localhost:3000/db/telegrams', {json: true});
-        if (telegram.length > 0) {
-            teleBot = new TelegramBot(telegram[0].botId, {
-                polling: true
-            });
 
-            teleBot.onText(/\/start/i, (msg, match) => {
-                const chatId = msg.chat.id;
-                teleBot.sendMessage(chatId, chatId);
-            });
-            if (telegram[0].chatId && telegram[0].chatId !== "") {
-                chatId = telegram[0].chatId;
-            }
+function initTelegram() {
+    console.log('init');
+    const filename = process.cwd() + '/telegrams.json';
+    let telegrams = helper.readJSONFile(filename);
+    console.log(telegrams);
+    if (telegrams.length > 0) {
+        teleBot = new TelegramBot(telegrams[0].botId, {
+            polling: true
+        });
+        console.log('teleBot initiated');
+        teleBot.on('message', (msg, match) => {
+            const chatId = msg.chat.id;
+            teleBot.sendMessage(chatId, chatId);
+        });
+        if (telegrams[0].chatId && telegrams[0].chatId !== "") {
+            chatId = telegrams[0].chatId;
         }
     }
+
 }
 
 process.once("SIGTERM", function () {
@@ -103,7 +110,10 @@ app.use('/botApi/start/:id', async (req, res) => {
                 bot.bot.send({action: 'start', id: bot.id});
 
                 body.status = 'Running';
-                request.put('http://localhost:3000/db/bots/' + bot.id, {body: body, json: true}, (err, resp, body) => {
+                request.put('http://localhost:3000/db/bots/' + bot.id, {
+                    body: body,
+                    json: true
+                }, (err, resp, body) => {
                     if (err) {
                         res.status(500).json({err: true, msg: 'Failed to start bot'});
                     } else {
@@ -133,14 +143,14 @@ function sendTelegram(text) {
     }
 }
 
-router.post('/telegram', async (req, res) => {
-    await sendTelegram(req.body);
-    res.send('OK');
+router.post('/telegram', (req, res) => {
+    sendTelegram(req.body);
+    res.json({success: true});
 });
 
-router.get('/initTelegram', async (req, res) => {
-    await initTelegram();
-    res.send('OK');
+router.get('/initTelegram', (req, res) => {
+    initTelegram();
+    res.json({success: true});
 });
 
 
@@ -182,3 +192,4 @@ const server = http.createServer(app);
 server.listen(port, () => {
     console.log('App listening on port ', port);
 });
+
