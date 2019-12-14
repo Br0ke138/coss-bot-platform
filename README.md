@@ -5,7 +5,7 @@ Telegram User: @Br0ke138
 How-To:
 - Download newest version here https://github.com/Br0ke138/coss-bot-platform/releases
   (Please use the file according to your operating system)
-- Put the file into a dedicated folder
+- Create a folder and insert the downloaded file
 - Run the file
 - Open localhost:3000
 
