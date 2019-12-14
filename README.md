@@ -2,14 +2,14 @@
 
 Telegram User: @Br0ke138
 
-##How-To:
+## How-To:
 - Download newest version here https://github.com/Br0ke138/coss-bot-platform/releases
   (Please use the file according to your operating system)
 - Create a folder and insert the downloaded file
 - Run the file
 - Open localhost:3000
 
-##Features:
+## Features:
 - Grid trading
 - Multi bot support
 - Multi key support
