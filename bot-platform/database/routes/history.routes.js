@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const order = require('../models/order.model');
+const history = require('../models/history.model');
 const m = require('../helpers/middlewares');
 
-/* All orders */
+/* All historys */
 router.get('/', async (req, res) => {
-    await order.getOrders()
-        .then(orders => res.json(orders))
+    await history.getHistorys()
+        .then(historys => res.json(historys))
         .catch(err => {
             if (err.status) {
                 res.status(err.status).json({message: err.message})
@@ -16,12 +16,12 @@ router.get('/', async (req, res) => {
         })
 });
 
-/* A order by order_id */
+/* A history by order_id */
 router.get('/:order_id', async (req, res) => {
     const order_id = req.params.order_id;
 
-    await order.getOrder(order_id)
-        .then(order => res.json(order))
+    await history.getHistory(order_id)
+        .then(history => res.json(history))
         .catch(err => {
             if (err.status) {
                 res.status(err.status).json({message: err.message})
@@ -31,24 +31,24 @@ router.get('/:order_id', async (req, res) => {
         })
 });
 
-/* Insert a new order */
+/* Insert a new history */
 router.post('/', m.checkFieldsOrder, async (req, res) => {
-    await order.insertOrder(req.body)
-        .then(order => res.status(201).json({
-            message: `The order #${order.order_id} has been created`,
-            content: order
+    await history.insertHistory(req.body)
+        .then(history => res.status(201).json({
+            message: `The history #${history.order_id} has been created`,
+            content: history
         }))
         .catch(err => res.status(500).json({message: err.message}))
 });
 
-/* Update a order */
+/* Update a history */
 router.put('/:order_id', m.checkFieldsOrder, async (req, res) => {
     const order_id = req.params.order_id;
 
-    await order.updateOrder(order_id, req.body)
-        .then(order => res.json({
-            message: `The order #${order_id} has been updated`,
-            content: order
+    await history.updateHistory(order_id, req.body)
+        .then(history => res.json({
+            message: `The history #${order_id} has been updated`,
+            content: history
         }))
         .catch(err => {
             if (err.status) {
@@ -58,13 +58,13 @@ router.put('/:order_id', m.checkFieldsOrder, async (req, res) => {
         })
 });
 
-/* Delete a order */
+/* Delete a history */
 router.delete('/:order_id', async (req, res) => {
     const order_id = req.params.order_id;
 
-    await order.deleteOrder(order_id)
-        .then(order => res.json({
-            message: `The order #${order_id} has been deleted`
+    await history.deleteHistory(order_id)
+        .then(history => res.json({
+            message: `The history #${order_id} has been deleted`
         }))
         .catch(err => {
             if (err.status) {

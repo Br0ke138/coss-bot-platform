@@ -8,9 +8,9 @@ function getOrders() {
     })
 }
 
-function getOrder(id) {
+function getOrder(order_id) {
     return new Promise((resolve, reject) => {
-        helper.mustBeInArray(orders, id)
+        helper.mustBeInArrayOrders(orders, order_id)
         .then(order => resolve(order))
         .catch(err => reject(err))
     })
@@ -18,29 +18,18 @@ function getOrder(id) {
 
 function insertOrder(newOrder) {
     return new Promise((resolve, reject) => {
-        const id = { id: helper.getNewId(orders) };
-        const date = { 
-            createdAt: helper.newDate(),
-            updatedAt: helper.newDate()
-        };
-        newOrder = { ...id, ...date, ...newOrder };
         orders.push(newOrder);
         helper.writeJSONFile(filename, orders);
         resolve(newOrder)
     })
 }
 
-function updateOrder(id, newOrder) {
+function updateOrder(order_id, newOrder) {
     return new Promise((resolve, reject) => {
-        helper.mustBeInArray(orders, id)
+        helper.mustBeInArrayOrders(orders, order_id)
         .then(order => {
-            const index = orders.findIndex(p => p.id === order.id);
-            id = { id: order.id };
-            const date = {
-                createdAt: order.createdAt,
-                updatedAt: helper.newDate()
-            };
-            orders[index] = { ...id, ...date, ...newOrder };
+            const index = orders.findIndex(p => p.order_id === order.order_id);
+            orders[index] = { ...newOrder };
             helper.writeJSONFile(filename, orders);
             resolve(orders[index])
         })
@@ -48,11 +37,11 @@ function updateOrder(id, newOrder) {
     })
 }
 
-function deleteOrder(id) {
+function deleteOrder(order_id) {
     return new Promise((resolve, reject) => {
-        helper.mustBeInArray(orders, id)
+        helper.mustBeInArrayOrders(orders, order_id)
         .then(() => {
-            orders = orders.filter(p => p.id !== id);
+            orders = orders.filter(p => p.order_id !== order_id);
             helper.writeJSONFile(filename, orders);
             resolve()
         })

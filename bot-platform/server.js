@@ -29,26 +29,44 @@ let teleBot;
 let chatId;
 
 initTelegram();
-
 function initTelegram() {
-    console.log('init');
     const filename = process.cwd() + '/telegrams.json';
     let telegrams = helper.readJSONFile(filename);
-    console.log(telegrams);
     if (telegrams.length > 0) {
         teleBot = new TelegramBot(telegrams[0].botId, {
             polling: true
         });
-        console.log('teleBot initiated');
+
         teleBot.on('message', (msg, match) => {
             const chatId = msg.chat.id;
             teleBot.sendMessage(chatId, chatId);
         });
         if (telegrams[0].chatId && telegrams[0].chatId !== "") {
             chatId = telegrams[0].chatId;
+            sendTelegram('Bot platform successfully connected');
         }
     }
+}
 
+checkForRunningBots();
+async function checkForRunningBots() {
+    const filename = process.cwd() + '/bots.json';
+    let bots = helper.readJSONFile(filename);
+
+    if (bots.length > 0) {
+        for (const bot of bots) {
+            if (bot.status === 'Running') {
+                bot.status = 'Crashed';
+
+                try {
+                    await requestPromise.put('http://localhost:3000/db/bots/' + bot.id, {json: true, body: bot});
+                } catch (e) {
+                    console.log(bot.name + ' was still running and should be in status crashed but failed to update status');
+                }
+
+            }
+        }
+    }
 }
 
 process.once("SIGTERM", function () {
@@ -130,29 +148,54 @@ app.use('/botApi/stop/:id', (req, res) => {
         return bot.id === req.params.id;
     });
     if (!bot) {
-        res.send('Bot not found');
+        const forked = fork(process.cwd() + '/Bots/Grid/index.js');
+
+        forked.on('message', (msg) => {
+            console.log('Message from child', msg);
+        });
+
+        forked.onUnexpectedExit = function (code, signal) {
+            console.log("Child process terminated with code: " + code);
+        };
+        forked.on("exit", forked.onUnexpectedExit);
+
+        forked.shutdown = function () {
+            this.removeListener("exit", this.onUnexpectedExit);
+            this.kill("SIGTERM");
+        };
+
+        const bot = {
+            id: req.params.id,
+            bot: forked
+        };
+        bots.push(bot);
+
+        forked.send({action: 'stop', id: req.params.id});
+        res.send({msg: 'Bot will cancel orders and then exit'});
     } else {
         bot.bot.send({action: 'stop', id: req.params.id});
-        res.send('Bot will cancel orders and then exit');
+        res.send({msg: 'Bot will cancel orders and then exit'});
     }
 });
 
 function sendTelegram(text) {
+    console.log(text);
     if (teleBot && chatId) {
         teleBot.sendMessage(chatId, text);
     }
 }
 
-router.post('/telegram', (req, res) => {
-    sendTelegram(req.body);
+router.post('/telegramApi/telegram', (req, res) => {
+    sendTelegram(req.body.msg);
     res.json({success: true});
 });
 
-router.get('/initTelegram', (req, res) => {
+router.get('/telegramApi/initTelegram', (req, res) => {
     initTelegram();
     res.json({success: true});
 });
 
+app.use(router);
 
 // Public api (Because of cors)
 app.use('/api/:route', (req, res) => {
@@ -192,4 +235,3 @@ const server = http.createServer(app);
 server.listen(port, () => {
     console.log('App listening on port ', port);
 });
-

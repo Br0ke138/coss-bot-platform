@@ -1,11 +1,5 @@
 function checkFieldsOrder(req, res, next) {
-    const {title, content, tags} = req.body;
-
-    if (title && content && tags) {
-        next()
-    } else {
-        res.status(400).json({message: 'fields are not good'})
-    }
+    next()
 }
 
 function checkFieldsBot(req, res, next) {

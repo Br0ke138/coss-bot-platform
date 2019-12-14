@@ -61,22 +61,22 @@ var cossApi;
 var orders = [];
 var stop = false;
 process.on('message', function (msg) { return __awaiter(void 0, void 0, void 0, function () {
-    var bot, keys, _a, e_1, grids, closest, _i, _b, grid, e_2, e_3;
+    var bot, keys, _a, e_1, grids, closest, _i, _b, grid, e_2, e_3, bot, keys;
     return __generator(this, function (_c) {
         switch (_c.label) {
             case 0:
-                if (!(msg.action === 'start')) return [3 /*break*/, 23];
+                if (!(msg.action === 'start')) return [3 /*break*/, 25];
                 stop = false;
                 botId = msg.id;
                 // @ts-ignore
                 console.log('Bot started', botId);
                 _c.label = 1;
             case 1:
-                _c.trys.push([1, 21, , 23]);
+                _c.trys.push([1, 23, , 25]);
                 return [4 /*yield*/, request_promise_native_1.default.get('http://localhost:3000/db/bots/' + botId, { json: true })];
             case 2:
                 bot = _c.sent();
-                if (!bot.config) return [3 /*break*/, 20];
+                if (!bot.config) return [3 /*break*/, 22];
                 config = bot.config;
                 botName = bot.name;
                 return [4 /*yield*/, sendTelegram(botName + ' started on pair: ' + config.pair)];
@@ -101,63 +101,91 @@ process.on('message', function (msg) { return __awaiter(void 0, void 0, void 0, 
                 process.exit(0);
                 return [3 /*break*/, 8];
             case 8:
-                if (!config.grids) return [3 /*break*/, 20];
+                if (!(config.orders && config.orders.length > 0)) return [3 /*break*/, 10];
+                orders = config.orders;
+                sendTelegram(botName + ': Will continue operation. ' + config.orders.length + ' Orders found');
+                return [4 /*yield*/, checkOrders()];
+            case 9:
+                _c.sent();
+                _c.label = 10;
+            case 10:
+                if (!((!config.orders || config.orders.length < 1) && config.grids)) return [3 /*break*/, 22];
                 grids = config.grids;
                 closest = grids.reduce(function (prev, curr) { return (Math.abs(curr - price) < Math.abs(prev - price) ? curr : prev); });
                 grids.splice(grids.indexOf(closest), 1);
                 _i = 0, _b = config.grids;
-                _c.label = 9;
-            case 9:
-                if (!(_i < _b.length)) return [3 /*break*/, 18];
+                _c.label = 11;
+            case 11:
+                if (!(_i < _b.length)) return [3 /*break*/, 20];
                 grid = _b[_i];
-                _c.label = 10;
-            case 10:
-                _c.trys.push([10, 12, , 17]);
+                _c.label = 12;
+            case 12:
+                _c.trys.push([12, 14, , 19]);
                 // @ts-ignore
                 return [4 /*yield*/, placeOrder(parseFloat(grid) > price ? 'SELL' : 'BUY', grid.toString(), decimal_js_1.default.div(config.amountPerGrid, grid).toNumber().toFixed(config.precisionAmount), config.pair)];
-            case 11:
+            case 13:
                 // @ts-ignore
                 _c.sent();
-                return [3 /*break*/, 17];
-            case 12:
+                return [3 /*break*/, 19];
+            case 14:
                 e_2 = _c.sent();
                 console.log(e_2);
                 console.log('Failed to place all orders. Bot will cancel all orders it made');
                 return [4 /*yield*/, sendTelegram(botName + ' failed to place all orders and will cancel already created orders')];
-            case 13:
+            case 15:
                 _c.sent();
                 return [4 /*yield*/, cancelAllOrders()];
-            case 14:
+            case 16:
                 _c.sent();
                 console.log('All orders canceled. Bot will enter status stopped');
                 return [4 /*yield*/, sendTelegram(botName + ' canceled all orders')];
-            case 15:
+            case 17:
                 _c.sent();
                 return [4 /*yield*/, changeBotStatus(BotStatus.Stopped)];
-            case 16:
+            case 18:
                 _c.sent();
-                return [3 /*break*/, 17];
-            case 17:
-                _i++;
-                return [3 /*break*/, 9];
-            case 18: return [4 /*yield*/, checkOrders()];
+                return [3 /*break*/, 19];
             case 19:
-                _c.sent();
-                _c.label = 20;
-            case 20: return [3 /*break*/, 23];
+                _i++;
+                return [3 /*break*/, 11];
+            case 20: return [4 /*yield*/, checkOrders()];
             case 21:
+                _c.sent();
+                _c.label = 22;
+            case 22: return [3 /*break*/, 25];
+            case 23:
                 e_3 = _c.sent();
                 return [4 /*yield*/, changeBotStatus(BotStatus.Crashed)];
-            case 22:
+            case 24:
                 _c.sent();
                 console.log('Failed on startup. Bot will enter status Crashed');
                 console.log(e_3);
-                return [3 /*break*/, 23];
-            case 23:
-                if (msg.action === 'stop') {
-                    stop = true;
-                }
-                return [2 /*return*/];
+                return [3 /*break*/, 25];
+            case 25:
+                if (!(msg.action === 'stop')) return [3 /*break*/, 31];
+                stop = true;
+                botId = msg.id;
+                return [4 /*yield*/, request_promise_native_1.default.get('http://localhost:3000/db/bots/' + botId, { json: true })];
+            case 26:
+                bot = _c.sent();
+                botName = bot.name;
+                if (!(bot.status === 'Crashed' && bot.config && bot.config.orders)) return [3 /*break*/, 28];
+                orders = bot.config.orders;
+                return [4 /*yield*/, request_promise_native_1.default.get('http://localhost:3000/db/keys/' + bot.keys.id, { json: true })];
+            case 27:
+                keys = _c.sent();
+                cossApi = new coss_api_service_1.CossApiService(keys.public, keys.secret);
+                _c.label = 28;
+            case 28: return [4 /*yield*/, checkOrders()];
+            case 29:
+                _c.sent();
+                // @ts-ignore
+                return [4 /*yield*/, sendTelegram(botName + ' stopped on pair: ' + bot.config.pair)];
+            case 30:
+                // @ts-ignore
+                _c.sent();
+                _c.label = 31;
+            case 31: return [2 /*return*/];
         }
     });
 }); });
@@ -165,7 +193,7 @@ function sendTelegram(text) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, request_promise_native_1.default.post('http://localhost:3000/telegram', { body: text })];
+                case 0: return [4 /*yield*/, request_promise_native_1.default.post('http://localhost:3000/telegramApi/telegram', { body: { msg: text, type: botId }, json: true })];
                 case 1:
                     _a.sent();
                     return [2 /*return*/];
@@ -199,11 +227,33 @@ function changeBotStatus(status) {
 }
 function checkOrders() {
     return __awaiter(this, void 0, void 0, function () {
-        var i, fetchedOrder, e_4, index, e_5, e_6, e_7;
+        var e_4, i, fetchedOrder, e_5, index, e_6, e_7;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
+                    if (!stop) return [3 /*break*/, 7];
+                    _a.label = 1;
+                case 1:
+                    _a.trys.push([1, 4, , 6]);
+                    return [4 /*yield*/, cancelAllOrders()];
+                case 2:
+                    _a.sent();
+                    return [4 /*yield*/, changeBotStatus(BotStatus.Stopped)];
+                case 3:
+                    _a.sent();
+                    console.log('All orders canceled. Bot will enter status stopped');
+                    return [3 /*break*/, 6];
+                case 4:
+                    e_4 = _a.sent();
+                    return [4 /*yield*/, changeBotStatus(BotStatus.Crashed)];
+                case 5:
+                    _a.sent();
+                    console.log('Failed to cancel all orders. Bot will enter status crashed');
+                    return [3 /*break*/, 6];
+                case 6: return [2 /*return*/];
+                case 7:
                     if (orders.length < 1) {
+                        changeBotStatus(BotStatus.Crashed);
                         // @ts-ignore
                         process.send("No orders found");
                         process.exit(0);
@@ -212,103 +262,98 @@ function checkOrders() {
                         return order.status.toUpperCase() !== "FILLED";
                     });
                     i = 0;
-                    _a.label = 1;
-                case 1:
-                    if (!(i < orders.length)) return [3 /*break*/, 20];
+                    _a.label = 8;
+                case 8:
+                    if (!(i < orders.length)) return [3 /*break*/, 32];
+                    if (stop) {
+                        return [3 /*break*/, 32];
+                    }
                     fetchedOrder = void 0;
-                    _a.label = 2;
-                case 2:
-                    _a.trys.push([2, 4, , 5]);
+                    _a.label = 9;
+                case 9:
+                    _a.trys.push([9, 11, , 12]);
                     return [4 /*yield*/, cossApi.getOrderDetails({
                             order_id: orders[i].order_id,
                             recvWindow: 9999999,
                             timestamp: Date.now()
                         })];
-                case 3:
-                    fetchedOrder = _a.sent();
-                    return [3 /*break*/, 5];
-                case 4:
-                    e_4 = _a.sent();
-                    return [3 /*break*/, 5];
-                case 5:
-                    if (!(fetchedOrder && fetchedOrder.order_id)) return [3 /*break*/, 18];
-                    orders[i] = fetchedOrder;
-                    if (!(orders[i].status.toUpperCase() === "FILLED")) return [3 /*break*/, 17];
-                    console.log("Found filled order", orders[i]);
-                    return [4 /*yield*/, sendTelegram('Order filled: \n\n' + JSON.stringify(orders[i], null, 2))];
-                case 6:
-                    _a.sent();
-                    if (!config.grids) return [3 /*break*/, 17];
-                    index = config.grids.indexOf(parseFloat(orders[i].order_price));
-                    if (!(orders[i].order_side === "BUY")) return [3 /*break*/, 12];
-                    index--;
-                    _a.label = 7;
-                case 7:
-                    _a.trys.push([7, 9, , 11]);
-                    return [4 /*yield*/, placeOrder('SELL', config.grids[index].toString(), decimal_js_1.default.div(config.amountPerGrid, config.grids[index]).toNumber().toFixed(config.precisionAmount), config.pair)];
-                case 8:
-                    _a.sent();
-                    return [3 /*break*/, 11];
-                case 9:
-                    e_5 = _a.sent();
-                    orders[i].status = "PARTIAL_FILL";
-                    console.log(e_5);
-                    return [4 /*yield*/, sendTelegram('Failed to place matching order. Will retry next cycle')];
                 case 10:
-                    _a.sent();
-                    return [3 /*break*/, 11];
-                case 11: return [3 /*break*/, 17];
+                    fetchedOrder = _a.sent();
+                    return [3 /*break*/, 12];
+                case 11:
+                    e_5 = _a.sent();
+                    return [3 /*break*/, 12];
                 case 12:
-                    index++;
-                    _a.label = 13;
+                    if (!(fetchedOrder && fetchedOrder.order_id)) return [3 /*break*/, 30];
+                    orders[i] = fetchedOrder;
+                    return [4 /*yield*/, updateOrder(fetchedOrder)];
                 case 13:
-                    _a.trys.push([13, 15, , 17]);
-                    return [4 /*yield*/, placeOrder('BUY', config.grids[index].toString(), decimal_js_1.default.div(config.amountPerGrid, config.grids[index]).toNumber().toFixed(config.precisionAmount), config.pair)];
+                    _a.sent();
+                    if (!(orders[i].status.toUpperCase() === "FILLED")) return [3 /*break*/, 29];
+                    console.log("Found filled order", orders[i]);
+                    return [4 /*yield*/, sendTelegram(botName + ': Filled a ' + orders[i].order_side + ' order on pair ' + orders[i].order_symbol + ' with amount ' + orders[i].order_size + ' @ ' + orders[i].order_price)];
                 case 14:
                     _a.sent();
-                    return [3 /*break*/, 17];
+                    if (!config.grids) return [3 /*break*/, 29];
+                    index = config.grids.indexOf(parseFloat(orders[i].order_price));
+                    if (!(orders[i].order_side === "BUY")) return [3 /*break*/, 22];
+                    index--;
+                    _a.label = 15;
                 case 15:
+                    _a.trys.push([15, 19, , 21]);
+                    return [4 /*yield*/, placeOrder('SELL', config.grids[index].toString(), decimal_js_1.default.div(config.amountPerGrid, config.grids[index]).toNumber().toFixed(config.precisionAmount), config.pair)];
+                case 16:
+                    _a.sent();
+                    return [4 /*yield*/, request_promise_native_1.default.delete('http://localhost:3000/db/orders/' + orders[i].order_id)];
+                case 17:
+                    _a.sent();
+                    return [4 /*yield*/, request_promise_native_1.default.post('http://localhost:3000/db/historys', { json: true, body: orders[i] })];
+                case 18:
+                    _a.sent();
+                    return [3 /*break*/, 21];
+                case 19:
                     e_6 = _a.sent();
                     orders[i].status = "PARTIAL_FILL";
                     console.log(e_6);
                     return [4 /*yield*/, sendTelegram('Failed to place matching order. Will retry next cycle')];
-                case 16:
-                    _a.sent();
-                    return [3 /*break*/, 17];
-                case 17: return [3 /*break*/, 19];
-                case 18:
-                    console.log('Unable to get last status of order:', orders[i]);
-                    _a.label = 19;
-                case 19:
-                    i++;
-                    return [3 /*break*/, 1];
                 case 20:
-                    if (!stop) return [3 /*break*/, 27];
-                    _a.label = 21;
-                case 21:
-                    _a.trys.push([21, 24, , 26]);
-                    return [4 /*yield*/, cancelAllOrders()];
+                    _a.sent();
+                    return [3 /*break*/, 21];
+                case 21: return [3 /*break*/, 29];
                 case 22:
-                    _a.sent();
-                    return [4 /*yield*/, changeBotStatus(BotStatus.Stopped)];
+                    index++;
+                    _a.label = 23;
                 case 23:
-                    _a.sent();
-                    console.log('All orders canceled. Bot will enter status stopped');
-                    process.exit(0);
-                    return [3 /*break*/, 26];
+                    _a.trys.push([23, 27, , 29]);
+                    return [4 /*yield*/, placeOrder('BUY', config.grids[index].toString(), decimal_js_1.default.div(config.amountPerGrid, config.grids[index]).toNumber().toFixed(config.precisionAmount), config.pair)];
                 case 24:
-                    e_7 = _a.sent();
-                    return [4 /*yield*/, changeBotStatus(BotStatus.Crashed)];
+                    _a.sent();
+                    return [4 /*yield*/, request_promise_native_1.default.delete('http://localhost:3000/db/orders/' + orders[i].order_id)];
                 case 25:
                     _a.sent();
-                    console.log('Failed to cancel all orders. Bot will enter status crashed');
-                    return [3 /*break*/, 26];
-                case 26: return [3 /*break*/, 29];
-                case 27: return [4 /*yield*/, checkOrders()];
+                    return [4 /*yield*/, request_promise_native_1.default.post('http://localhost:3000/db/historys', { json: true, body: orders[i] })];
+                case 26:
+                    _a.sent();
+                    return [3 /*break*/, 29];
+                case 27:
+                    e_7 = _a.sent();
+                    orders[i].status = "PARTIAL_FILL";
+                    console.log(e_7);
+                    return [4 /*yield*/, sendTelegram('Failed to place matching order. Will retry next cycle')];
                 case 28:
                     _a.sent();
-                    _a.label = 29;
-                case 29: return [2 /*return*/];
+                    return [3 /*break*/, 29];
+                case 29: return [3 /*break*/, 31];
+                case 30:
+                    console.log('Unable to get last status of order:', orders[i]);
+                    _a.label = 31;
+                case 31:
+                    i++;
+                    return [3 /*break*/, 8];
+                case 32: return [4 /*yield*/, checkOrders()];
+                case 33:
+                    _a.sent();
+                    return [2 /*return*/];
             }
         });
     });
@@ -350,11 +395,11 @@ function placeOrder(side, price, amount, symbol) {
                             case 3:
                                 newOrder = _a.sent();
                                 if (!(newOrder && newOrder.order_id)) return [3 /*break*/, 5];
-                                console.log(orderToPlace);
-                                return [4 /*yield*/, sendTelegram(JSON.stringify(orderToPlace, undefined, 2))];
+                                return [4 /*yield*/, sendTelegram(botName + ': Placed a ' + side + ' order on pair ' + symbol + ' with amount ' + amount + ' @ ' + price)];
                             case 4:
                                 _a.sent();
                                 orders.push(newOrder);
+                                saveOrder(newOrder);
                                 resolve(newOrder);
                                 return [3 /*break*/, 9];
                             case 5:
@@ -392,10 +437,10 @@ function cancelOrder(order) {
                                 i = 0;
                                 _a.label = 1;
                             case 1:
-                                if (!(i < 3)) return [3 /*break*/, 9];
+                                if (!(i < 3)) return [3 /*break*/, 6];
                                 _a.label = 2;
                             case 2:
-                                _a.trys.push([2, 7, , 8]);
+                                _a.trys.push([2, 4, , 5]);
                                 return [4 /*yield*/, cossApi.cancelOrder({
                                         timestamp: Date.now(),
                                         recvWindow: 99999999,
@@ -404,31 +449,29 @@ function cancelOrder(order) {
                                     })];
                             case 3:
                                 canceledOrder = _a.sent();
-                                if (!(canceledOrder && canceledOrder.order_id)) return [3 /*break*/, 5];
-                                console.log('Canceled Order: ' + order.order_id);
-                                return [4 /*yield*/, sendTelegram('Canceled Order: ' + order.order_id)];
-                            case 4:
-                                _a.sent();
-                                index = orders.indexOf(order);
-                                orders.splice(index, 1);
-                                resolve(true);
-                                return [3 /*break*/, 9];
-                            case 5:
-                                if (i === 2) {
-                                    reject('Unable to cancel order: orderId');
+                                if (canceledOrder && canceledOrder.order_id) {
+                                    console.log('Canceled Order: ' + order.order_id);
+                                    index = orders.indexOf(order);
+                                    orders.splice(index, 1);
+                                    resolve(true);
+                                    return [3 /*break*/, 6];
                                 }
-                                _a.label = 6;
-                            case 6: return [3 /*break*/, 8];
-                            case 7:
+                                else {
+                                    if (i === 2) {
+                                        reject('Unable to cancel order: ' + order.order_id + order.order_price);
+                                    }
+                                }
+                                return [3 /*break*/, 5];
+                            case 4:
                                 e_9 = _a.sent();
                                 if (i === 2) {
-                                    reject('Unable to cancel order: orderId');
+                                    reject('Unable to cancel order: ' + order.order_id + order.order_price);
                                 }
-                                return [3 /*break*/, 8];
-                            case 8:
+                                return [3 /*break*/, 5];
+                            case 5:
                                 i++;
                                 return [3 /*break*/, 1];
-                            case 9: return [2 /*return*/];
+                            case 6: return [2 /*return*/];
                         }
                     });
                 }); })];
@@ -439,39 +482,102 @@ function cancelAllOrders() {
     return __awaiter(this, void 0, void 0, function () {
         var _this = this;
         return __generator(this, function (_a) {
-            return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                    var _i, orders_1, order, e_10;
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                _i = 0, orders_1 = orders;
-                                _a.label = 1;
-                            case 1:
-                                if (!(_i < orders_1.length)) return [3 /*break*/, 6];
-                                order = orders_1[_i];
-                                _a.label = 2;
-                            case 2:
-                                _a.trys.push([2, 4, , 5]);
-                                return [4 /*yield*/, cancelOrder(order)];
-                            case 3:
-                                _a.sent();
-                                return [3 /*break*/, 5];
-                            case 4:
-                                e_10 = _a.sent();
-                                // @ts-ignore
-                                process.send(e_10);
-                                // @ts-ignore
-                                process.exit(0);
-                                return [3 /*break*/, 5];
-                            case 5:
-                                _i++;
-                                return [3 /*break*/, 1];
-                            case 6:
-                                resolve(true);
-                                return [2 /*return*/];
-                        }
-                    });
-                }); })];
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, sendTelegram(botName + ': Will cancel all orders ...')];
+                case 1:
+                    _a.sent();
+                    return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
+                            var _i, orders_1, order, bot, e_10;
+                            return __generator(this, function (_a) {
+                                switch (_a.label) {
+                                    case 0:
+                                        _i = 0, orders_1 = orders;
+                                        _a.label = 1;
+                                    case 1:
+                                        if (!(_i < orders_1.length)) return [3 /*break*/, 10];
+                                        order = orders_1[_i];
+                                        _a.label = 2;
+                                    case 2:
+                                        _a.trys.push([2, 8, , 9]);
+                                        return [4 /*yield*/, cancelOrder(order)];
+                                    case 3:
+                                        _a.sent();
+                                        return [4 /*yield*/, request_promise_native_1.default.delete('http://localhost:3000/db/orders/' + order.order_id)];
+                                    case 4:
+                                        _a.sent();
+                                        return [4 /*yield*/, request_promise_native_1.default.post('http://localhost:3000/db/historys', { json: true, body: order })];
+                                    case 5:
+                                        _a.sent();
+                                        return [4 /*yield*/, request_promise_native_1.default.get('http://localhost:3000/db/bots/' + botId, { json: true })];
+                                    case 6:
+                                        bot = _a.sent();
+                                        // @ts-ignore
+                                        bot.config.orders = orders;
+                                        return [4 /*yield*/, request_promise_native_1.default.put('http://localhost:3000/db/bots/' + botId, { json: true, body: bot })];
+                                    case 7:
+                                        _a.sent();
+                                        return [3 /*break*/, 9];
+                                    case 8:
+                                        e_10 = _a.sent();
+                                        // @ts-ignore
+                                        process.send(e_10);
+                                        // @ts-ignore
+                                        process.exit(0);
+                                        return [3 /*break*/, 9];
+                                    case 9:
+                                        _i++;
+                                        return [3 /*break*/, 1];
+                                    case 10: return [4 /*yield*/, sendTelegram(botName + ': Canceled ' + orders.length + ' orders')];
+                                    case 11:
+                                        _a.sent();
+                                        resolve(true);
+                                        return [2 /*return*/];
+                                }
+                            });
+                        }); })];
+            }
+        });
+    });
+}
+function saveOrder(order) {
+    return __awaiter(this, void 0, void 0, function () {
+        var bot;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, request_promise_native_1.default.get('http://localhost:3000/db/bots/' + botId, { json: true })];
+                case 1:
+                    bot = _a.sent();
+                    // @ts-ignore
+                    bot.config.orders = orders;
+                    return [4 /*yield*/, request_promise_native_1.default.put('http://localhost:3000/db/bots/' + botId, { json: true, body: bot })];
+                case 2:
+                    _a.sent();
+                    return [4 /*yield*/, request_promise_native_1.default.post('http://localhost:3000/db/orders', { body: order, json: true })];
+                case 3:
+                    _a.sent();
+                    return [2 /*return*/];
+            }
+        });
+    });
+}
+function updateOrder(order) {
+    return __awaiter(this, void 0, void 0, function () {
+        var bot;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, request_promise_native_1.default.get('http://localhost:3000/db/bots/' + botId, { json: true })];
+                case 1:
+                    bot = _a.sent();
+                    // @ts-ignore
+                    bot.config.orders = orders;
+                    return [4 /*yield*/, request_promise_native_1.default.put('http://localhost:3000/db/bots/' + botId, { json: true, body: bot })];
+                case 2:
+                    _a.sent();
+                    return [4 /*yield*/, request_promise_native_1.default.put('http://localhost:3000/db/orders/' + order.order_id, { body: order, json: true })];
+                case 3:
+                    _a.sent();
+                    return [2 /*return*/];
+            }
         });
     });
 }

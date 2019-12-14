@@ -20,6 +20,19 @@ function mustBeInArray(array, id) {
     })
 }
 
+function mustBeInArrayOrders(array, order_id) {
+    return new Promise((resolve, reject) => {
+        const row = array.find(r => r.order_id === order_id);
+        if (!row) {
+            reject({
+                message: 'ID is not good',
+                status: 404
+            })
+        }
+        resolve(row)
+    })
+}
+
 function writeJSONFile(filename, content) {
     fs.writeFileSync(filename, JSON.stringify(content), 'utf8', (err) => {
         if (err) {
@@ -48,6 +61,7 @@ module.exports = {
     getNewId,
     newDate,
     mustBeInArray,
+    mustBeInArrayOrders,
     writeJSONFile,
     readJSONFile
 };
