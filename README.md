@@ -7,7 +7,7 @@ Telegram User: @Br0ke138
   (Please use the file according to your operating system)
 - Create a folder and insert the downloaded file
 - Run the file
-- Open localhost:3000
+- Open your browser and go to the following url: localhost:3000
 
 ## Features:
 - Grid trading
