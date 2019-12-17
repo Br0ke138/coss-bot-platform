@@ -1,5 +1,5 @@
 import {CossApiService} from './coss-api/coss-api.service';
-import {CancelOrderResponse, Order, OrderResponse} from "./swaggerSchema";
+import {CancelOrderResponse, Order, OrderResponse, TradeDetailsArray} from "./swaggerSchema";
 import request from "request-promise-native";
 import Decimal from "decimal.js";
 
@@ -195,7 +195,7 @@ async function checkOrders() {
                         try {
                             await placeOrder('SELL', config.grids[index].toString(), Decimal.div(config.amountPerGrid, config.grids[index]).toNumber().toFixed(config.precisionAmount), config.pair);
                             await request.delete('http://localhost:3000/db/orders/' + orders[i].order_id);
-                            await request.post('http://localhost:3000/db/historys', {json: true, body: orders[i]});
+                            await saveHistory(orders[i].order_id);
                         } catch (e) {
                             orders[i].status = "PARTIAL_FILL";
                             console.log(e);
@@ -206,7 +206,7 @@ async function checkOrders() {
                         try {
                             await placeOrder('BUY', config.grids[index].toString(), Decimal.div(config.amountPerGrid, config.grids[index]).toNumber().toFixed(config.precisionAmount), config.pair);
                             await request.delete('http://localhost:3000/db/orders/' + orders[i].order_id);
-                            await request.post('http://localhost:3000/db/historys', {json: true, body: orders[i]});
+                            await saveHistory(orders[i].order_id);
                         } catch (e) {
                             orders[i].status = "PARTIAL_FILL";
                             console.log(e);
@@ -305,7 +305,7 @@ async function cancelAllOrders(): Promise<boolean> {
             try {
                 await cancelOrder(order);
                 await request.delete('http://localhost:3000/db/orders/' + order.order_id);
-                await request.post('http://localhost:3000/db/historys', {json: true, body: order});
+                await saveHistory(order.order_id);
                 const bot: Bot = await request.get('http://localhost:3000/db/bots/' + botId, {json: true});
                 // @ts-ignore
                 bot.config.orders = orders;
@@ -323,13 +323,34 @@ async function cancelAllOrders(): Promise<boolean> {
     });
 }
 
+async function saveHistory(order_id: string) {
+    return new Promise(async (resolve, reject) => {
+        for (let i = 0; i < 3; i++) {
+            try {
+                const tradeDetails: TradeDetailsArray = await cossApi.getTradeDetails({
+                    timestamp: Date.now(),
+                    recvWindow: 99999999,
+                    order_id: order_id
+                });
+
+                for (let tradeDetail of tradeDetails) {
+                    await request.post('http://localhost:3000/db/historys', {json: true, body: Object.assign({botId: botId}, tradeDetail)});
+                }
+                resolve();
+            } catch (e) {
+                console.log('Unable so get profits for order: ' + order_id);
+                resolve();
+            }
+        }
+    })
+}
 
 async function saveOrder(order: OrderResponse) {
     const bot: Bot = await request.get('http://localhost:3000/db/bots/' + botId, {json: true});
     // @ts-ignore
     bot.config.orders = orders;
     await request.put('http://localhost:3000/db/bots/' + botId, {json: true, body: bot});
-    await request.post('http://localhost:3000/db/orders', {body: order, json: true})
+    await request.post('http://localhost:3000/db/orders', {body: Object.assign({botId: botId}, order), json: true})
 }
 
 async function updateOrder(order: OrderResponse) {
@@ -337,5 +358,5 @@ async function updateOrder(order: OrderResponse) {
     // @ts-ignore
     bot.config.orders = orders;
     await request.put('http://localhost:3000/db/bots/' + botId, {json: true, body: bot});
-    await request.put('http://localhost:3000/db/orders/' + order.order_id, {body: order, json: true})
+    await request.put('http://localhost:3000/db/orders/' + order.order_id, {body: Object.assign({botId: botId}, order), json: true})
 }
