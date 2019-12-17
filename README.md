@@ -6,7 +6,11 @@ Telegram User: @Br0ke138
 - Download newest version here https://github.com/Br0ke138/coss-bot-platform/releases
   (Please use the file according to your operating system)
 - Create a folder and insert the downloaded file
-- Run the file
+- Run the file 
+  - Windows: Double Click
+  - Windows Advanced: Open cmd and navigate into the folder and then ./coss-bot-platform-win.exe)
+  - Linux: Open Terminal and navigate into the folder and run via ./coss-bot-platform-linux
+  - Mac: Open Terminal and navigate into the folder and run via ./coss-bot-platform-macos
 - Open http://localhost:3000
 
 ## Features:
