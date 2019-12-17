@@ -45,3 +45,12 @@ testem.log
 # System Files
 .DS_Store
 Thumbs.db
+
+# Data
+/bot-platform/bots.json
+/bot-platform/keys.json
+/bot-platform/orders.json
+/bot-platform/telegrams.json
+
+# Executables
+/bot-platform/coss-grid*

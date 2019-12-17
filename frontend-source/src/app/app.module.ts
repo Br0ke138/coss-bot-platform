@@ -5,6 +5,7 @@ import {AppRoutingModule} from './app-routing.module';
 import {AppComponent} from './app.component';
 import {SidenavComponent} from './sidenav/sidenav.component';
 import {
+  MatAutocompleteModule,
   MatButtonModule,
   MatCardModule,
   MatCheckboxModule,
@@ -70,7 +71,8 @@ import { TelegramComponent } from './pages/telegram/telegram.component';
     MatGridListModule,
     NgApexchartsModule,
     MatProgressSpinnerModule,
-    MatTableModule
+    MatTableModule,
+    MatAutocompleteModule
   ],
   providers: [],
   bootstrap: [AppComponent],

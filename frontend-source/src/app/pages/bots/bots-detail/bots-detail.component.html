@@ -53,14 +53,13 @@
         </div>
 
         <mat-form-field class="example-full-width">
-          <mat-label>Pair</mat-label>
-          <mat-select formControlName="pair" [value]="form.get('pair').value">
-            <mat-option *ngFor="let symbol of symbols" [value]="symbol">
+          <input type="text" placeholder="Pair" matInput [formControl]="pairSearch" [matAutocomplete]="auto">
+          <mat-autocomplete #auto="matAutocomplete">
+            <mat-option *ngFor="let symbol of filteredOptions | async" [value]="symbol" (click)="form.patchValue({pair: symbol})">
               {{symbol}}
             </mat-option>
-          </mat-select>
+          </mat-autocomplete>
         </mat-form-field>
-
 
         <mat-form-field class="example-full-width">
           <input matInput placeholder="Upper Wall" value="" formControlName="upperWall"
@@ -73,17 +72,17 @@
         </mat-form-field>
 
         <mat-form-field class="example-full-width">
-          <input matInput [placeholder]="'Number of Grids (Max: ' + getMaxGrids() + ' '" value="" formControlName="numberOfGrids"
+          <input matInput [placeholder]="'Number of Grids (Max: ' + getMaxGrids() + ')'" value="" formControlName="numberOfGrids"
                  [value]="form.get('numberOfGrids').value">
         </mat-form-field>
 
         <mat-form-field class="example-full-width">
-          <input matInput placeholder="Amount per Grid" value="" formControlName="amountPerGrid"
+          <input matInput [placeholder]="'Amount per Grid (Min: ' + minOrderSize + ')'" value="" formControlName="amountPerGrid"
                  [value]="form.get('amountPerGrid').value">
         </mat-form-field>
 
         <button mat-raised-button color="primary"
-                [disabled]="!editedForm || gridsAll.length === 0 || form.value.amountPerGrid < minOrderSize || bot?.status === 'Running' || !form.value.pair || !form.value.upperWall || !form.value.lowerWall || !form.value.numberOfGrids || !form.value.amountPerGrid"
+                [disabled]="!editedForm || gridsAll.length === 0 || form.value.numberOfGrids <= getMaxGrids() || form.value.amountPerGrid < minOrderSize || bot?.status === 'Running' || !form.value.pair || !form.value.upperWall || !form.value.lowerWall || !form.value.numberOfGrids || !form.value.amountPerGrid"
                 (click)="saveConfig()">{{editedForm ? 'Save' : 'Saved' }}
         </button>
 
@@ -94,7 +93,6 @@
 
         <div *ngIf="form && form.value.upperWall && form.value.lowerWall && form.value.numberOfGrids && grids.length > 0">
           <p>Grid distance: {{ getGridDistance() }}</p>
-          <p>Number of fitting Grids: {{ grids.length + 1 }}</p>
         </div>
       </form>
 

@@ -1,6 +1,6 @@
 import {ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
 import {Bot, BotsService} from '../../../services/bots.service';
-import {Subscription} from 'rxjs';
+import {Observable, Subscription} from 'rxjs';
 import {ActivatedRoute, Router} from '@angular/router';
 import {FormControl, FormGroup} from '@angular/forms';
 import {
@@ -14,7 +14,7 @@ import {
   ApexXAxis,
   ApexYAxis
 } from 'ng-apexcharts';
-import {take} from 'rxjs/operators';
+import {map, startWith, take} from 'rxjs/operators';
 import {HttpClient} from '@angular/common/http';
 import {Decimal} from 'decimal.js';
 
@@ -150,6 +150,9 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
 
   interval;
 
+  pairSearch = new FormControl();
+  filteredOptions: Observable<any>;
+
   constructor(
     private route: ActivatedRoute,
     public botsService: BotsService,
@@ -167,14 +170,13 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
         this.exchangeInfo.symbols.forEach(symbol => {
           this.symbols.push(symbol.symbol);
         });
+        this.filteredOptions = this.pairSearch.valueChanges
+          .pipe(
+            startWith(''),
+            map(value => this._filter(value))
+          );
 
-        if (this.currentPair) {
-          this.exchangeInfo.base_currencies.forEach(currency => {
-            if (currency.currency_code === this.currentPair.split('_')[1]) {
-              this.minOrderSize = parseFloat(currency.minimum_total_order);
-            }
-          });
-        }
+        this.getInfos();
 
         this.symbols.sort((a: string, b: string) => {
           return a.split('_')[0] < b.split('_')[0] ? -1 : 1;
@@ -208,8 +210,13 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
               amountPerGrid: new FormControl(),
             });
           }
-          this.form.valueChanges.subscribe(() => {
+          this.form.valueChanges.subscribe((value) => {
             this.editedForm = true;
+
+            console.log(value);
+            if (this.currentPair !== value.pair) {
+              this.getInfos();
+            }
           });
           if (this.bot.status === 'Running') {
             this.form.disable();
@@ -223,11 +230,35 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
               } else {
                 this.form.enable();
               }
-            })
+            });
           }, 5000);
         }
       });
     });
+  }
+
+  private _filter(value: string): string[] {
+    const filterValue = value.toLowerCase();
+
+    return this.symbols.filter(symbol => symbol.toLowerCase().includes(filterValue));
+  }
+  getInfos() {
+    if (this.exchangeInfo && this.form.value.pair) {
+      this.precisionPrice = 0;
+      this.exchangeInfo.symbols.forEach(symbol => {
+        if (symbol.symbol === this.form.value.pair) {
+          this.precisionPrice = parseInt(symbol.price_limit_decimal, 10);
+          this.precisionAmount = parseInt(symbol.amount_limit_decimal, 10);
+        }
+      });
+
+      this.exchangeInfo.base_currencies.forEach(currency => {
+        if (currency.currency_code === this.form.value.pair.split('_')[1]) {
+          this.minOrderSize = parseFloat(currency.minimum_total_order);
+        }
+      });
+    }
+    console.log(this.precisionPrice, this.minOrderSize);
   }
 
   startBot() {
@@ -287,13 +318,7 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
     if (form.pair) {
       if (this.currentPair !== form.pair) {
         this.currentPair = form.pair;
-        if (this.exchangeInfo) {
-          this.exchangeInfo.base_currencies.forEach(currency => {
-            if (currency.currency_code === this.currentPair.split('_')[1]) {
-              this.minOrderSize = parseFloat(currency.minimum_total_order);
-            }
-          });
-        }
+        this.getInfos();
         this.showChart = false;
         this.http.get('http://localhost:3000/api/engine/cs?symbol=' + form.pair + '&tt=12h')
           .pipe(take(1))
@@ -348,17 +373,7 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
       const lower = parseFloat(form.lowerWall);
       const gridAmount = parseFloat(form.numberOfGrids);
 
-
-      this.precisionPrice = 0;
-      this.exchangeInfo.symbols.forEach(symbol => {
-        if (symbol.symbol === this.currentPair) {
-          console.log(symbol);
-          this.precisionPrice = parseInt(symbol.price_limit_decimal, 10);
-          this.precisionAmount = parseInt(symbol.amount_limit_decimal, 10);
-        }
-      });
-
-      this.margin = Math.ceil(Math.pow(10, this.precisionPrice) * ((upper - lower) / gridAmount)) / Math.pow(10, this.precisionPrice);
+      this.margin = this.getGridDistance();
 
       for (let i = 0; i < gridAmount; i++) {
         const price = Decimal.sub(upper, (Decimal.mul(this.margin, i).toNumber())).toNumber();
@@ -401,12 +416,37 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
   }
 
   getMaxGrids() {
-      return (parseFloat(this.form.value.upperWall) - parseFloat(this.form.value.lowerWall)) * Math.pow(10, this.precisionPrice);
+    if (this.form.value.upperWall && this.form.value.lowerWall && this.precisionPrice) {
+      return Decimal.mul(
+        Decimal.sub(
+          this.form.value.upperWall,
+          this.form.value.lowerWall
+        ).toNumber(),
+        Math.pow(10, this.precisionPrice)
+      ).toNumber();
+    } else {
+      return 0;
+    }
   }
 
   getGridDistance() {
-    console.log();
-    return Math.floor (Math.pow(10, this.precisionPrice) * (parseFloat(this.form.value.upperWall) - parseFloat(this.form.value.lowerWall)) / parseFloat(this.form.value.numberOfGrids)) / Math.pow(10, this.precisionPrice);
+    // tslint:disable-next-line:max-line-length
+    return Decimal.div(
+      Math.floor(
+        Decimal.mul(
+          Math.pow(10, this.precisionPrice),
+          Decimal.div(
+            Decimal.sub(
+              this.form.value.upperWall,
+              this.form.value.lowerWall
+            ).toNumber(),
+            this.form.value.numberOfGrids
+          ).toNumber()
+        ).toNumber()
+      ),
+      Math.pow(10, this.precisionPrice)
+    ).toNumber();
+
   }
 
   getBuyOrders(): Array<number> {
