@@ -21,6 +21,18 @@ Telegram User: @Br0ke138
 - Visualisation of the bot config
 - Easter egg
 
+## Build manually
+- Install Node.js
+- Download https://github.com/Br0ke138/coss-bot-platform/archive/master.zip
+- Open Terminal/Cmd
+- Navigate into */coss-bot-platform/bot-platform
+- npm install
+- npm install pkg
+- Build application
+  - Windows: ./node_modules/pkg/lib-es5/bin.js package.json -t win
+  - Linux: ./node_modules/pkg/lib-es5/bin.js package.json -t linux
+  - MacOS: ./node_modules/pkg/lib-es5/bin.js package.json -t macos
+
 ## STEP BY STEP EXPLANATION OF GRID TRADING 
 
 In this section, let's find out how the bot actually work. In this example, we use BTC/USDT pair the following parameters:
