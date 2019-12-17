@@ -307,7 +307,7 @@ function checkOrders() {
                     return [4 /*yield*/, request_promise_native_1.default.delete('http://localhost:3000/db/orders/' + orders[i].order_id)];
                 case 17:
                     _a.sent();
-                    return [4 /*yield*/, request_promise_native_1.default.post('http://localhost:3000/db/historys', { json: true, body: orders[i] })];
+                    return [4 /*yield*/, saveHistory(orders[i].order_id)];
                 case 18:
                     _a.sent();
                     return [3 /*break*/, 21];
@@ -331,7 +331,7 @@ function checkOrders() {
                     return [4 /*yield*/, request_promise_native_1.default.delete('http://localhost:3000/db/orders/' + orders[i].order_id)];
                 case 25:
                     _a.sent();
-                    return [4 /*yield*/, request_promise_native_1.default.post('http://localhost:3000/db/historys', { json: true, body: orders[i] })];
+                    return [4 /*yield*/, saveHistory(orders[i].order_id)];
                 case 26:
                     _a.sent();
                     return [3 /*break*/, 29];
@@ -505,7 +505,7 @@ function cancelAllOrders() {
                                         return [4 /*yield*/, request_promise_native_1.default.delete('http://localhost:3000/db/orders/' + order.order_id)];
                                     case 4:
                                         _a.sent();
-                                        return [4 /*yield*/, request_promise_native_1.default.post('http://localhost:3000/db/historys', { json: true, body: order })];
+                                        return [4 /*yield*/, saveHistory(order.order_id)];
                                     case 5:
                                         _a.sent();
                                         return [4 /*yield*/, request_promise_native_1.default.get('http://localhost:3000/db/bots/' + botId, { json: true })];
@@ -539,6 +539,59 @@ function cancelAllOrders() {
         });
     });
 }
+function saveHistory(order_id) {
+    return __awaiter(this, void 0, void 0, function () {
+        var _this = this;
+        return __generator(this, function (_a) {
+            return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
+                    var i, tradeDetails, _i, tradeDetails_1, tradeDetail, e_11;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                i = 0;
+                                _a.label = 1;
+                            case 1:
+                                if (!(i < 3)) return [3 /*break*/, 10];
+                                _a.label = 2;
+                            case 2:
+                                _a.trys.push([2, 8, , 9]);
+                                return [4 /*yield*/, cossApi.getTradeDetails({
+                                        timestamp: Date.now(),
+                                        recvWindow: 99999999,
+                                        order_id: order_id
+                                    })];
+                            case 3:
+                                tradeDetails = _a.sent();
+                                _i = 0, tradeDetails_1 = tradeDetails;
+                                _a.label = 4;
+                            case 4:
+                                if (!(_i < tradeDetails_1.length)) return [3 /*break*/, 7];
+                                tradeDetail = tradeDetails_1[_i];
+                                return [4 /*yield*/, request_promise_native_1.default.post('http://localhost:3000/db/historys', { json: true, body: Object.assign({ botId: botId }, tradeDetail) })];
+                            case 5:
+                                _a.sent();
+                                _a.label = 6;
+                            case 6:
+                                _i++;
+                                return [3 /*break*/, 4];
+                            case 7:
+                                resolve();
+                                return [3 /*break*/, 9];
+                            case 8:
+                                e_11 = _a.sent();
+                                console.log('Unable so get profits for order: ' + order_id);
+                                resolve();
+                                return [3 /*break*/, 9];
+                            case 9:
+                                i++;
+                                return [3 /*break*/, 1];
+                            case 10: return [2 /*return*/];
+                        }
+                    });
+                }); })];
+        });
+    });
+}
 function saveOrder(order) {
     return __awaiter(this, void 0, void 0, function () {
         var bot;
@@ -552,7 +605,7 @@ function saveOrder(order) {
                     return [4 /*yield*/, request_promise_native_1.default.put('http://localhost:3000/db/bots/' + botId, { json: true, body: bot })];
                 case 2:
                     _a.sent();
-                    return [4 /*yield*/, request_promise_native_1.default.post('http://localhost:3000/db/orders', { body: order, json: true })];
+                    return [4 /*yield*/, request_promise_native_1.default.post('http://localhost:3000/db/orders', { body: Object.assign({ botId: botId }, order), json: true })];
                 case 3:
                     _a.sent();
                     return [2 /*return*/];
@@ -573,7 +626,7 @@ function updateOrder(order) {
                     return [4 /*yield*/, request_promise_native_1.default.put('http://localhost:3000/db/bots/' + botId, { json: true, body: bot })];
                 case 2:
                     _a.sent();
-                    return [4 /*yield*/, request_promise_native_1.default.put('http://localhost:3000/db/orders/' + order.order_id, { body: order, json: true })];
+                    return [4 /*yield*/, request_promise_native_1.default.put('http://localhost:3000/db/orders/' + order.order_id, { body: Object.assign({ botId: botId }, order), json: true })];
                 case 3:
                     _a.sent();
                     return [2 /*return*/];
