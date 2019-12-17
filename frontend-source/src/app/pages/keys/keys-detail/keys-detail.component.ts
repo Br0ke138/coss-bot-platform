@@ -3,6 +3,7 @@ import {Subscription} from 'rxjs';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Key, KeysService} from '../../../services/keys.service';
 import {take} from 'rxjs/operators';
+import {TelegramService} from '../../../services/telegram.service';
 
 @Component({
   selector: 'app-keys-detail',
@@ -14,7 +15,7 @@ export class KeysDetailComponent implements OnInit {
   key: Key;
   private routeSub: Subscription;
 
-  constructor(private route: ActivatedRoute, public keysService: KeysService, private router: Router) {
+  constructor(private route: ActivatedRoute, public keysService: KeysService, private router: Router, private telegramService: TelegramService) {
   }
 
   ngOnInit() {

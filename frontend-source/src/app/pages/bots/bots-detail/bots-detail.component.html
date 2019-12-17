@@ -1,18 +1,44 @@
 <mat-card>
-  <mat-card-title>Details</mat-card-title>
-  <p>Name: {{ bot?.name }} </p>
-  <p>Type: {{ bot?.type }} </p>
-  <p>Status: {{ bot?.status }} </p>
+  <mat-card-title>How to</mat-card-title>
+  <ol>
+    <li>Select a pair</li>
+    <li>Optional: click on visualize to</li>
+    <li>Setup the price range the bot operates in (Upper and Lower wall)</li>
+    <li>Enter the max number of grids (The bot will calculate the possible grid distance and reduces the amount to the possible amount inside the range)</li>
+    <li>Enter the Amount per Grid (per Order) in the quote (COS_ETH -> in ETH) (If the number is lower then the min Order Size the save button is greyed out</li>
+    <li>Click on visualize and check if everything is as you wish</li>
+    <li>Click on save</li>
+    <li>Click on start</li>
+  </ol>
 </mat-card>
+
+<div class="flex-container">
+
+  <mat-card>
+    <mat-card-title>Details</mat-card-title>
+    <p>Name: {{ bot?.name }} </p>
+    <p>Type: {{ bot?.type }} </p>
+    <p>Status: {{ bot?.status }} </p>
+  </mat-card>
+
+  <!--<apx-chart *ngIf="bot?.status === 'Running' && bot?.config?.orders && bot?.config?.orders.length > 0 && seriesRunning && seriesRunning.length > 0" [tooltip]="tooltip" [series]="seriesRunning" [chart]="chart" [title]="title"-->
+             <!--[xaxis]="xAxis" [yaxis]="yAxis" [stroke]="stroke" [colors]="colors" [grid]="grid"-->
+             <!--[legend]="legend"></apx-chart>-->
+</div>
 
 <mat-card>
   <mat-card-title>Action</mat-card-title>
-
-  <button mat-raised-button color="primary" [disabled]="bot?.status === 'Running'" (click)="startBot()">Start</button>
-  <button mat-raised-button color="primary" [disabled]="bot?.status !== 'Running'" (click)="stopBot()">Cancel Orders and
-    Stop
-  </button>
-  <button mat-raised-button color="primary" [disabled]="bot?.status === 'Running'" (click)="removeBot()">Delete</button>
+  <ng-container *ngIf="bot?.status === 'Crashed'">
+    <button mat-raised-button color="primary" (click)="startBot()">Restart</button>
+    <button mat-raised-button color="primary" (click)="stopBot()">Cancel Orders</button>
+  </ng-container>
+  <ng-container *ngIf="bot?.status !== 'Crashed'">
+    <button mat-raised-button color="primary" [disabled]="bot?.status === 'Running' || !bot?.config" (click)="startBot()">Start</button>
+    <button mat-raised-button color="primary" [disabled]="bot?.status !== 'Running'" (click)="stopBot()">Cancel Orders and
+      Stop
+    </button>
+    <button mat-raised-button color="primary" [disabled]="bot?.status === 'Running'" (click)="removeBot()">Delete</button>
+  </ng-container>
 
 </mat-card>
 
@@ -47,7 +73,7 @@
         </mat-form-field>
 
         <mat-form-field class="example-full-width">
-          <input matInput placeholder="Number of Grids" value="" formControlName="numberOfGrids"
+          <input matInput [placeholder]="'Number of Grids (Max: ' + getMaxGrids() + ' '" value="" formControlName="numberOfGrids"
                  [value]="form.get('numberOfGrids').value">
         </mat-form-field>
 
@@ -57,14 +83,19 @@
         </mat-form-field>
 
         <button mat-raised-button color="primary"
-                [disabled]="gridsAll.length === 0 || form.value.amountPerGrid < minOrderSize || bot?.status === 'Running' || !form.value.pair || !form.value.upperWall || !form.value.lowerWall || !form.value.numberOfGrids || !form.value.amountPerGrid"
-                (click)="saveConfig()">Save
+                [disabled]="!editedForm || gridsAll.length === 0 || form.value.amountPerGrid < minOrderSize || bot?.status === 'Running' || !form.value.pair || !form.value.upperWall || !form.value.lowerWall || !form.value.numberOfGrids || !form.value.amountPerGrid"
+                (click)="saveConfig()">{{editedForm ? 'Save' : 'Saved' }}
         </button>
 
         <button mat-raised-button color="primary"
                 [disabled]="!form.value.pair"
                 (click)="initChart(form.value)">Visualize
         </button>
+
+        <div *ngIf="form && form.value.upperWall && form.value.lowerWall && form.value.numberOfGrids && grids.length > 0">
+          <p>Grid distance: {{ getGridDistance() }}</p>
+          <p>Number of fitting Grids: {{ grids.length + 1 }}</p>
+        </div>
       </form>
 
       <mat-spinner *ngIf="currentPair && !showChart"></mat-spinner>
@@ -74,13 +105,14 @@
     </div>
 
     <div class="flex-container" *ngIf="showChart && form.value.amountPerGrid > 0">
-      <h2>Initial Buy Orders (Need {{ this.totalBuy }} {{ currentPair ? currentPair.split('_')[1] : '' }})</h2>
-      <h2>Initial Sell Orders (Need {{ this.totalSell }} {{ currentPair ? currentPair.split('_')[0] : '' }})</h2>
+      <h2>Initial Buy Orders (Need {{ totalBuy }} {{ currentPair ? currentPair.split('_')[1] : '' }})</h2>
+      <h2>Initial Sell Orders (Need {{ totalSell }} {{ currentPair ? currentPair.split('_')[0] : '' }})</h2>
     </div>
     <div class="flex-container" *ngIf="showChart && form.value.amountPerGrid > 0">
       <app-order-table [pair]="currentPair" [dataSource]="getBuyOrders()"></app-order-table>
       <app-order-table [pair]="currentPair" [dataSource]="getSellOrders()"></app-order-table>
     </div>
+
 
   </mat-card>
 

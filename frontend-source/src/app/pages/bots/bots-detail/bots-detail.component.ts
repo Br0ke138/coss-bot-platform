@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, OnInit} from '@angular/core';
+import {ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
 import {Bot, BotsService} from '../../../services/bots.service';
 import {Subscription} from 'rxjs';
 import {ActivatedRoute, Router} from '@angular/router';
@@ -23,7 +23,7 @@ import {Decimal} from 'decimal.js';
   templateUrl: './bots-detail.component.html',
   styleUrls: ['./bots-detail.component.scss']
 })
-export class BotsDetailComponent implements OnInit {
+export class BotsDetailComponent implements OnInit, OnDestroy {
 
   bot: Bot;
   private routeSub: Subscription;
@@ -39,6 +39,7 @@ export class BotsDetailComponent implements OnInit {
     enabled: false,
   };
   series: ApexAxisChartSeries;
+  seriesRunning: ApexAxisChartSeries;
   seriesCopy: ApexAxisChartSeries;
   chart: ApexChart = {
     height: 400,
@@ -145,6 +146,10 @@ export class BotsDetailComponent implements OnInit {
   margin = 0;
   gridsAll = [];
 
+  editedForm = false;
+
+  interval;
+
   constructor(
     private route: ActivatedRoute,
     public botsService: BotsService,
@@ -185,6 +190,8 @@ export class BotsDetailComponent implements OnInit {
         this.bot = bot;
         if (this.bot) {
           if (this.bot.config) {
+            this.precisionPrice = this.bot.config.precisionPrice;
+            this.precisionAmount = this.bot.config.precisionAmount;
             this.form = new FormGroup({
               pair: new FormControl(this.bot.config.pair),
               upperWall: new FormControl(this.bot.config.upperWall),
@@ -201,19 +208,30 @@ export class BotsDetailComponent implements OnInit {
               amountPerGrid: new FormControl(),
             });
           }
+          this.form.valueChanges.subscribe(() => {
+            this.editedForm = true;
+          });
           if (this.bot.status === 'Running') {
             this.form.disable();
           }
+          const self = this;
+          this.interval = setInterval(() => {
+            self.botsService.getBot(params['id']).pipe(take(1)).subscribe(bot => {
+              self.bot = bot;
+              if (self.bot.status === 'Running') {
+                this.form.disable();
+              } else {
+                this.form.enable();
+              }
+            })
+          }, 5000);
         }
       });
     });
-
-
   }
 
   startBot() {
     this.botsService.startBot(this.bot.id).pipe(take(1)).subscribe(() => {
-      console.log('asdjnsdfgkjd');
       this.botsService.getBot(this.bot.id).pipe(take(1)).subscribe(bot => {
         this.bot = bot;
         this.form.disable();
@@ -248,6 +266,7 @@ export class BotsDetailComponent implements OnInit {
       this.botsService.getBot(this.bot.id).pipe(take(1)).subscribe(bot => {
         this.bot = bot;
         this.fillForm(this.bot.config);
+        this.editedForm = false;
       });
     });
 
@@ -325,14 +344,15 @@ export class BotsDetailComponent implements OnInit {
       // Grids
       this.grids = [];
 
-      const upper = form.upperWall;
-      const lower = form.lowerWall;
-      const gridAmount = form.numberOfGrids;
+      const upper = parseFloat(form.upperWall);
+      const lower = parseFloat(form.lowerWall);
+      const gridAmount = parseFloat(form.numberOfGrids);
 
 
       this.precisionPrice = 0;
       this.exchangeInfo.symbols.forEach(symbol => {
         if (symbol.symbol === this.currentPair) {
+          console.log(symbol);
           this.precisionPrice = parseInt(symbol.price_limit_decimal, 10);
           this.precisionAmount = parseInt(symbol.amount_limit_decimal, 10);
         }
@@ -341,9 +361,11 @@ export class BotsDetailComponent implements OnInit {
       this.margin = Math.ceil(Math.pow(10, this.precisionPrice) * ((upper - lower) / gridAmount)) / Math.pow(10, this.precisionPrice);
 
       for (let i = 0; i < gridAmount; i++) {
-        this.grids.push((Decimal.sub(upper, (Decimal.mul(this.margin, i).toNumber())).toNumber()));
+        const price = Decimal.sub(upper, (Decimal.mul(this.margin, i).toNumber())).toNumber();
+        if (upper >= price && price >= lower) {
+          this.grids.push(price);
+        }
       }
-
       this.gridsAll = [].concat(this.grids);
       // tslint:disable-next-line:max-line-length
       const closest = this.grids.reduce((prev, curr) => (Math.abs(parseFloat(curr) - this.current) < Math.abs(parseFloat(prev) - this.current) ? curr : prev));
@@ -376,6 +398,15 @@ export class BotsDetailComponent implements OnInit {
       this.showChart = true;
     }
 
+  }
+
+  getMaxGrids() {
+      return (parseFloat(this.form.value.upperWall) - parseFloat(this.form.value.lowerWall)) * Math.pow(10, this.precisionPrice);
+  }
+
+  getGridDistance() {
+    console.log();
+    return Math.floor (Math.pow(10, this.precisionPrice) * (parseFloat(this.form.value.upperWall) - parseFloat(this.form.value.lowerWall)) / parseFloat(this.form.value.numberOfGrids)) / Math.pow(10, this.precisionPrice);
   }
 
   getBuyOrders(): Array<number> {
@@ -421,6 +452,12 @@ export class BotsDetailComponent implements OnInit {
     this.totalSell = parseFloat(this.totalSell.toFixed(this.precisionAmount));
 
     return dataSource.reverse();
+  }
+
+  ngOnDestroy(): void {
+    if (this.interval) {
+      clearInterval(this.interval)
+    }
   }
 
 }

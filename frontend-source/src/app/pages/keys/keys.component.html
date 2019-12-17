@@ -1,3 +1,18 @@
+<mat-card>
+  <mat-card-title>How to</mat-card-title>
+  <ol>
+    <li>Optional: Create an account on <a href="https://www.coss.io/c/reg?r=9GFH20YU7V">coss.io</a></li>
+    <li>Login to <a href="https://www.coss.io/c/accounts/login">coss.io</a></li>
+    <li>Go to the API management <a href="https://www.coss.io/c/accounts/api">page</a></li>
+    <li>At the bottom create a new API Key</li>
+    <li>Confirm via email (This will forward you to the API management page and will display your keys ONCE!)</li>
+    <li>Optional: Note your keys somewhere save</li>
+    <li>Click on Add Key</li>
+    <li>Enter a name and your public and private key</li>
+    <li>Click save</li>
+  </ol>
+</mat-card>
+
 <div class="flex-container">
   <mat-card *ngFor="let key of keys" [routerLink]="'/keys/' + key.id">
     <p>Name: {{ key?.name }} </p>

@@ -1,13 +1,25 @@
+<mat-card>
+  <mat-card-title>How to</mat-card-title>
+  <ol>
+    <li>Message @BotFather on telegram and create a bot</li>
+    <li>@BotFather will give you a bot token (marked in red)</li>
+    <li>Enter the bot token in the form at the bottom and click save and start</li>
+    <li>Send any message to your bot and the bot will respond with your chatId</li>
+    <li>Enter the chatId at the bottom and click save and start</li>
+    <li>If everything worked, the bot will tell you that it connected to the bot platform</li>
+  </ol>
+</mat-card>
+
 <mat-card *ngIf="form">
   <form class="example-form" [formGroup]="form">
     <mat-form-field class="example-full-width">
-      <input matInput placeholder="Bot Id" value="" formControlName="botId">
+      <input matInput placeholder="Bot token" formControlName="botId" [value]="form.get('botId').value">
     </mat-form-field>
 
     <mat-form-field class="example-full-width">
-      <input matInput placeholder="Public Key" value="" formControlName="chatId">
+      <input matInput placeholder="Chat ID (Send the bot a message after starting to receive)" [value]="form.get('chatId').value" formControlName="chatId">
     </mat-form-field>
 
-    <button mat-button mat-raised-button color="primary" (click)="save()">Save</button>
+    <button mat-button mat-raised-button color="primary" (click)="save()">Save and start</button>
   </form>
 </mat-card>

@@ -1,3 +1,16 @@
+<mat-card>
+  <mat-card-title>How to</mat-card-title>
+  <ol>
+    <li>Make sure you have setup a Key set first</li>
+    <li>Click on Add Bot</li>
+    <li>Give it a name</li>
+    <li>Select a bot type (For now only Grid Trading available</li>
+    <li>Select a Key Set</li>
+    <li>Click create</li>
+    <li>Click on the newly created bot and start to configure it</li>
+  </ol>
+</mat-card>
+
 <div class="flex-container">
   <mat-card *ngFor="let bot of bots" [routerLink]="'/bots/' + bot.id">
     <p>Name: {{ bot?.name }} </p>

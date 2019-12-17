@@ -5,6 +5,7 @@ import {MatDialog} from '@angular/material';
 import * as CryptoJS from 'crypto-js';
 import {NewKeyComponent} from './new-key/new-key.component';
 import {take} from 'rxjs/operators';
+import {TelegramService} from '../../services/telegram.service';
 
 @Component({
   selector: 'app-keys',

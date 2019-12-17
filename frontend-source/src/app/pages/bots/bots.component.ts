@@ -3,6 +3,7 @@ import {Bot, BotsService} from '../../services/bots.service';
 import {MatDialog} from '@angular/material';
 import {NewBotComponent} from './new-bot/new-bot.component';
 import {take} from 'rxjs/operators';
+import {TelegramService} from '../../services/telegram.service';
 
 @Component({
   selector: 'app-bots',
@@ -13,7 +14,7 @@ export class BotsComponent implements OnInit {
 
   bots: Array<Bot> = [];
 
-  constructor(public botsService: BotsService, private dialog: MatDialog) {
+  constructor(public botsService: BotsService, private dialog: MatDialog, private telegramService: TelegramService) {
   }
 
   ngOnInit() {
@@ -25,7 +26,7 @@ export class BotsComponent implements OnInit {
   }
 
   createBot() {
-    this.dialog.open(NewBotComponent, {disableClose: true}).afterClosed().subscribe(bot => {
+    this.dialog.open(NewBotComponent, {disableClose: true}).afterClosed().subscribe((bot: Bot) => {
       if (bot) {
         this.botsService.addBot(bot).pipe(take(1)).subscribe(result => {
           console.log(result);

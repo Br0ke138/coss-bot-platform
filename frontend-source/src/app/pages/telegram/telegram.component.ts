@@ -37,17 +37,17 @@ export class TelegramComponent implements OnInit {
   save() {
     if (this.telegram) {
       this.http.put('http://localhost:3000/db/telegrams/' + this.telegram.id, Object.assign(this.telegram, this.form.value)).pipe(take(1)).subscribe(result => {
-        console.log(result);
+        this.telegram = result['content'];
 
-        this.http.get('http://localhost:3000/initTelegram/').pipe(take(1)).subscribe(result => {
+        this.http.get('http://localhost:3000/telegramApi/initTelegram/').pipe(take(1)).subscribe(result => {
           console.log(result);
         })
       })
     } else {
       this.http.post('http://localhost:3000/db/telegrams/', this.form.value).pipe(take(1)).subscribe(result => {
-        console.log(result);
+        this.telegram = result['content'];
 
-        this.http.get('http://localhost:3000/initTelegram/').pipe(take(1)).subscribe(result => {
+        this.http.get('http://localhost:3000/telegramApi/initTelegram/').pipe(take(1)).subscribe(result => {
           console.log(result);
         })
       })

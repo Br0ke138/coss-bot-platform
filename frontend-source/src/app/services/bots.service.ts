@@ -1,14 +1,16 @@
 import {Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
+import {TelegramService} from './telegram.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class BotsService {
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, private telegramService: TelegramService) {
   }
 
   addBot(bot: Bot) {
+    this.telegramService.sendMessage('Added a bot with name: ' + bot.name, 'botAdd');
     bot.status = BotStatus.Init;
     return this.http.post('http://localhost:3000/db/bots', bot);
   }
@@ -22,10 +24,12 @@ export class BotsService {
   }
 
   updateBot(id: string, newBot: Bot) {
+    this.telegramService.sendMessage('Updated bot with name: ' + newBot.name, 'botUpdate');
     return this.http.put('http://localhost:3000/db/bots/' + id, newBot);
   }
 
   removeBot(id: string) {
+    this.telegramService.sendMessage('Removed a bot with id: ' + id, 'botRemove');
     return this.http.delete('http://localhost:3000/db/bots/' + id);
   }
 
