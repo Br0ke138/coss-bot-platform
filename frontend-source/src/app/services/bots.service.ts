@@ -1,6 +1,7 @@
 import {Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {TelegramService} from './telegram.service';
+import {OrderResponse} from "../../../../bots-grid-source/swaggerSchema";
 
 @Injectable({
   providedIn: 'root'
@@ -48,7 +49,7 @@ export interface Bot {
   name: string;
   type: BotTypes;
   status?: BotStatus;
-  orders?: Array<string>;
+  orders?: Array<OrderResponse>;
   config?: Config;
   keys: {id: string, name: string};
 }
