@@ -33,9 +33,11 @@ function initTelegram() {
     const filename = process.cwd() + '/telegrams.json';
     let telegrams = helper.readJSONFile(filename);
     if (telegrams.length > 0) {
-        teleBot = new TelegramBot(telegrams[0].botId, {
-            polling: true
-        });
+        if (!teleBot) {
+            teleBot = new TelegramBot(telegrams[0].botId, {
+                polling: true
+            });
+        }
 
         teleBot.on('message', (msg, match) => {
             const chatId = msg.chat.id;
