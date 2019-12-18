@@ -7,7 +7,12 @@ import {Component, Input} from '@angular/core';
 })
 export class OrderTableComponent {
   @Input()
-  dataSource = [];
+  dataSource: Array<{
+    price: number;
+    asset: string;
+    quote: number;
+    profit: string;
+  }> = [];
 
   @Input()
   pair: string;
