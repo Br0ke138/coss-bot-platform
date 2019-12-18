@@ -154,7 +154,7 @@ export class CossApiService {
 
     // Trade Details
     getTradeDetails(trade: TradeDetailRequest): RequestPromise<TradeDetailsArray> {
-        return request.post(this.TRADE + "order/trade-detail", {json: true});
+        return this.privatePost(this.TRADE + "order/trade-detail", trade);
     }
 
     // Open Orders
@@ -164,7 +164,7 @@ export class CossApiService {
 
     // Completed Orders
     getCompletedOrders(orders: OrderListRequest): RequestPromise<OrderListResponse> {
-        return request.post(this.TRADE + "order/list/completed", {json: true});
+        return this.privatePost(this.TRADE + "order/list/completed", orders);
     }
 
     // All Orders

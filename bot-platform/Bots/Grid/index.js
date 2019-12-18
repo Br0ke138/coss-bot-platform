@@ -227,7 +227,7 @@ function changeBotStatus(status) {
 }
 function checkOrders() {
     return __awaiter(this, void 0, void 0, function () {
-        var e_4, i, fetchedOrder, e_5, index, e_6, e_7;
+        var e_4, filledOrders, i, _i, filledOrders_1, filledOrder, i, index, e_5, e_6, e_7;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -258,100 +258,111 @@ function checkOrders() {
                         process.send("No orders found");
                         process.exit(0);
                     }
-                    orders = orders.filter(function (order) {
-                        return order.status.toUpperCase() !== "FILLED";
-                    });
-                    i = 0;
                     _a.label = 8;
                 case 8:
-                    if (!(i < orders.length)) return [3 /*break*/, 32];
-                    if (stop) {
-                        return [3 /*break*/, 32];
-                    }
-                    fetchedOrder = void 0;
-                    _a.label = 9;
+                    _a.trys.push([8, 34, , 35]);
+                    return [4 /*yield*/, fetchCompletedOrders(config.pair)];
                 case 9:
-                    _a.trys.push([9, 11, , 12]);
-                    return [4 /*yield*/, cossApi.getOrderDetails({
-                            order_id: orders[i].order_id,
-                            recvWindow: 9999999,
-                            timestamp: Date.now()
-                        })];
+                    filledOrders = _a.sent();
+                    i = 0;
+                    _a.label = 10;
                 case 10:
-                    fetchedOrder = _a.sent();
-                    return [3 /*break*/, 12];
+                    if (!(i < orders.length)) return [3 /*break*/, 15];
+                    _i = 0, filledOrders_1 = filledOrders;
+                    _a.label = 11;
                 case 11:
-                    e_5 = _a.sent();
-                    return [3 /*break*/, 12];
+                    if (!(_i < filledOrders_1.length)) return [3 /*break*/, 14];
+                    filledOrder = filledOrders_1[_i];
+                    if (!(orders[i].order_id === filledOrder.order_id)) return [3 /*break*/, 13];
+                    orders[i] = filledOrder;
+                    return [4 /*yield*/, updateOrder(orders[i])];
                 case 12:
-                    if (!(fetchedOrder && fetchedOrder.order_id)) return [3 /*break*/, 30];
-                    orders[i] = fetchedOrder;
-                    return [4 /*yield*/, updateOrder(fetchedOrder)];
+                    _a.sent();
+                    _a.label = 13;
                 case 13:
-                    _a.sent();
-                    if (!(orders[i].status.toUpperCase() === "FILLED")) return [3 /*break*/, 29];
-                    console.log("Found filled order", orders[i]);
-                    return [4 /*yield*/, sendTelegram(botName + ': Filled a ' + orders[i].order_side + ' order on pair ' + orders[i].order_symbol + ' with amount ' + orders[i].order_size + ' @ ' + orders[i].order_price)];
+                    _i++;
+                    return [3 /*break*/, 11];
                 case 14:
-                    _a.sent();
-                    if (!config.grids) return [3 /*break*/, 29];
-                    index = config.grids.indexOf(parseFloat(orders[i].order_price));
-                    if (!(orders[i].order_side === "BUY")) return [3 /*break*/, 22];
-                    index--;
-                    _a.label = 15;
+                    i++;
+                    return [3 /*break*/, 10];
                 case 15:
-                    _a.trys.push([15, 19, , 21]);
-                    return [4 /*yield*/, placeOrder('SELL', config.grids[index].toString(), decimal_js_1.default.div(config.amountPerGrid, config.grids[index]).toNumber().toFixed(config.precisionAmount), config.pair)];
+                    i = 0;
+                    _a.label = 16;
                 case 16:
-                    _a.sent();
-                    return [4 /*yield*/, request_promise_native_1.default.delete('http://localhost:3000/db/orders/' + orders[i].order_id)];
+                    if (!(i < orders.length)) return [3 /*break*/, 33];
+                    if (stop) {
+                        return [3 /*break*/, 33];
+                    }
+                    if (!(orders[i].status.toUpperCase() === 'FILLED')) return [3 /*break*/, 32];
+                    return [4 /*yield*/, sendTelegram(botName + ': Filled a ' + orders[i].order_side + ' order on pair ' + orders[i].order_symbol + ' with amount ' + orders[i].order_size + ' @ ' + orders[i].order_price)];
                 case 17:
                     _a.sent();
-                    return [4 /*yield*/, saveHistory(orders[i].order_id)];
+                    index = config.grids.indexOf(parseFloat(orders[i].order_price));
+                    if (!(orders[i].order_side === "BUY")) return [3 /*break*/, 25];
+                    index--;
+                    _a.label = 18;
                 case 18:
-                    _a.sent();
-                    return [3 /*break*/, 21];
+                    _a.trys.push([18, 22, , 24]);
+                    // @ts-ignore
+                    return [4 /*yield*/, placeOrder('SELL', config.grids[index].toString(), decimal_js_1.default.div(config.amountPerGrid, config.grids[index]).toNumber().toFixed(config.precisionAmount), config.pair)];
                 case 19:
+                    // @ts-ignore
+                    _a.sent();
+                    return [4 /*yield*/, removeOrder(orders[i])];
+                case 20:
+                    _a.sent();
+                    return [4 /*yield*/, saveHistory(orders[i].order_id)];
+                case 21:
+                    _a.sent();
+                    return [3 /*break*/, 24];
+                case 22:
+                    e_5 = _a.sent();
+                    orders[i].status = "PARTIAL_FILL";
+                    console.log(e_5);
+                    return [4 /*yield*/, sendTelegram('Failed to place matching order. Will retry next cycle')];
+                case 23:
+                    _a.sent();
+                    return [3 /*break*/, 24];
+                case 24: return [3 /*break*/, 32];
+                case 25:
+                    index++;
+                    _a.label = 26;
+                case 26:
+                    _a.trys.push([26, 30, , 32]);
+                    // @ts-ignore
+                    return [4 /*yield*/, placeOrder('BUY', config.grids[index].toString(), decimal_js_1.default.div(config.amountPerGrid, config.grids[index]).toNumber().toFixed(config.precisionAmount), config.pair)];
+                case 27:
+                    // @ts-ignore
+                    _a.sent();
+                    return [4 /*yield*/, removeOrder(orders[i])];
+                case 28:
+                    _a.sent();
+                    return [4 /*yield*/, saveHistory(orders[i].order_id)];
+                case 29:
+                    _a.sent();
+                    return [3 /*break*/, 32];
+                case 30:
                     e_6 = _a.sent();
                     orders[i].status = "PARTIAL_FILL";
                     console.log(e_6);
                     return [4 /*yield*/, sendTelegram('Failed to place matching order. Will retry next cycle')];
-                case 20:
-                    _a.sent();
-                    return [3 /*break*/, 21];
-                case 21: return [3 /*break*/, 29];
-                case 22:
-                    index++;
-                    _a.label = 23;
-                case 23:
-                    _a.trys.push([23, 27, , 29]);
-                    return [4 /*yield*/, placeOrder('BUY', config.grids[index].toString(), decimal_js_1.default.div(config.amountPerGrid, config.grids[index]).toNumber().toFixed(config.precisionAmount), config.pair)];
-                case 24:
-                    _a.sent();
-                    return [4 /*yield*/, request_promise_native_1.default.delete('http://localhost:3000/db/orders/' + orders[i].order_id)];
-                case 25:
-                    _a.sent();
-                    return [4 /*yield*/, saveHistory(orders[i].order_id)];
-                case 26:
-                    _a.sent();
-                    return [3 /*break*/, 29];
-                case 27:
-                    e_7 = _a.sent();
-                    orders[i].status = "PARTIAL_FILL";
-                    console.log(e_7);
-                    return [4 /*yield*/, sendTelegram('Failed to place matching order. Will retry next cycle')];
-                case 28:
-                    _a.sent();
-                    return [3 /*break*/, 29];
-                case 29: return [3 /*break*/, 31];
-                case 30:
-                    console.log('Unable to get last status of order:', orders[i]);
-                    _a.label = 31;
                 case 31:
+                    _a.sent();
+                    return [3 /*break*/, 32];
+                case 32:
                     i++;
-                    return [3 /*break*/, 8];
-                case 32: return [4 /*yield*/, checkOrders()];
+                    return [3 /*break*/, 16];
                 case 33:
+                    orders = orders.filter(function (order) {
+                        return order.status.toUpperCase() !== "FILLED";
+                    });
+                    return [3 /*break*/, 35];
+                case 34:
+                    e_7 = _a.sent();
+                    console.log(e_7);
+                    return [3 /*break*/, 35];
+                case 35: return [4 /*yield*/, checkOrders()];
+                case 36:
                     _a.sent();
                     return [2 /*return*/];
             }
@@ -487,48 +498,40 @@ function cancelAllOrders() {
                 case 1:
                     _a.sent();
                     return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                            var _i, orders_1, order, bot, e_10;
+                            var _i, orders_1, order, e_10;
                             return __generator(this, function (_a) {
                                 switch (_a.label) {
                                     case 0:
                                         _i = 0, orders_1 = orders;
                                         _a.label = 1;
                                     case 1:
-                                        if (!(_i < orders_1.length)) return [3 /*break*/, 10];
+                                        if (!(_i < orders_1.length)) return [3 /*break*/, 8];
                                         order = orders_1[_i];
                                         _a.label = 2;
                                     case 2:
-                                        _a.trys.push([2, 8, , 9]);
+                                        _a.trys.push([2, 6, , 7]);
                                         return [4 /*yield*/, cancelOrder(order)];
                                     case 3:
                                         _a.sent();
-                                        return [4 /*yield*/, request_promise_native_1.default.delete('http://localhost:3000/db/orders/' + order.order_id)];
+                                        return [4 /*yield*/, removeOrder(order)];
                                     case 4:
                                         _a.sent();
                                         return [4 /*yield*/, saveHistory(order.order_id)];
                                     case 5:
                                         _a.sent();
-                                        return [4 /*yield*/, request_promise_native_1.default.get('http://localhost:3000/db/bots/' + botId, { json: true })];
+                                        return [3 /*break*/, 7];
                                     case 6:
-                                        bot = _a.sent();
-                                        // @ts-ignore
-                                        bot.config.orders = orders;
-                                        return [4 /*yield*/, request_promise_native_1.default.put('http://localhost:3000/db/bots/' + botId, { json: true, body: bot })];
-                                    case 7:
-                                        _a.sent();
-                                        return [3 /*break*/, 9];
-                                    case 8:
                                         e_10 = _a.sent();
                                         // @ts-ignore
                                         process.send(e_10);
                                         // @ts-ignore
                                         process.exit(0);
-                                        return [3 /*break*/, 9];
-                                    case 9:
+                                        return [3 /*break*/, 7];
+                                    case 7:
                                         _i++;
                                         return [3 /*break*/, 1];
-                                    case 10: return [4 /*yield*/, sendTelegram(botName + ': Canceled ' + orders.length + ' orders')];
-                                    case 11:
+                                    case 8: return [4 /*yield*/, sendTelegram(botName + ': Canceled ' + orders.length + ' orders')];
+                                    case 9:
                                         _a.sent();
                                         resolve(true);
                                         return [2 /*return*/];
@@ -539,12 +542,63 @@ function cancelAllOrders() {
         });
     });
 }
+function fetchCompletedOrders(symbol) {
+    return __awaiter(this, void 0, void 0, function () {
+        var _this = this;
+        return __generator(this, function (_a) {
+            return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
+                    var i, completedOrders, e_11;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                i = 0;
+                                _a.label = 1;
+                            case 1:
+                                if (!(i < 3)) return [3 /*break*/, 6];
+                                _a.label = 2;
+                            case 2:
+                                _a.trys.push([2, 4, , 5]);
+                                return [4 /*yield*/, cossApi.getCompletedOrders({
+                                        timestamp: Date.now(),
+                                        recvWindow: 99999999,
+                                        symbol: symbol,
+                                        limit: 50,
+                                        page: 0,
+                                    })];
+                            case 3:
+                                completedOrders = _a.sent();
+                                if (completedOrders && completedOrders.list) {
+                                    resolve(completedOrders.list);
+                                    return [3 /*break*/, 6];
+                                }
+                                else {
+                                    if (i === 2) {
+                                        reject('Unable to fetch completed orders');
+                                    }
+                                }
+                                return [3 /*break*/, 5];
+                            case 4:
+                                e_11 = _a.sent();
+                                if (i === 2) {
+                                    reject('Unable to fetch completed orders');
+                                }
+                                return [3 /*break*/, 5];
+                            case 5:
+                                i++;
+                                return [3 /*break*/, 1];
+                            case 6: return [2 /*return*/];
+                        }
+                    });
+                }); })];
+        });
+    });
+}
 function saveHistory(order_id) {
     return __awaiter(this, void 0, void 0, function () {
         var _this = this;
         return __generator(this, function (_a) {
             return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                    var i, tradeDetails, _i, tradeDetails_1, tradeDetail, e_11;
+                    var i, tradeDetails, _i, tradeDetails_1, tradeDetail, e_12;
                     return __generator(this, function (_a) {
                         switch (_a.label) {
                             case 0:
@@ -567,7 +621,10 @@ function saveHistory(order_id) {
                             case 4:
                                 if (!(_i < tradeDetails_1.length)) return [3 /*break*/, 7];
                                 tradeDetail = tradeDetails_1[_i];
-                                return [4 /*yield*/, request_promise_native_1.default.post('http://localhost:3000/db/historys', { json: true, body: Object.assign({ botId: botId }, tradeDetail) })];
+                                return [4 /*yield*/, request_promise_native_1.default.post('http://localhost:3000/db/historys', {
+                                        json: true,
+                                        body: Object.assign({ botId: botId }, tradeDetail)
+                                    })];
                             case 5:
                                 _a.sent();
                                 _a.label = 6;
@@ -578,7 +635,7 @@ function saveHistory(order_id) {
                                 resolve();
                                 return [3 /*break*/, 9];
                             case 8:
-                                e_11 = _a.sent();
+                                e_12 = _a.sent();
                                 console.log('Unable so get profits for order: ' + order_id);
                                 resolve();
                                 return [3 /*break*/, 9];
@@ -594,19 +651,13 @@ function saveHistory(order_id) {
 }
 function saveOrder(order) {
     return __awaiter(this, void 0, void 0, function () {
-        var bot;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, request_promise_native_1.default.get('http://localhost:3000/db/bots/' + botId, { json: true })];
+                case 0: return [4 /*yield*/, updateBotOrders()];
                 case 1:
-                    bot = _a.sent();
-                    // @ts-ignore
-                    bot.config.orders = orders;
-                    return [4 /*yield*/, request_promise_native_1.default.put('http://localhost:3000/db/bots/' + botId, { json: true, body: bot })];
-                case 2:
                     _a.sent();
                     return [4 /*yield*/, request_promise_native_1.default.post('http://localhost:3000/db/orders', { body: Object.assign({ botId: botId }, order), json: true })];
-                case 3:
+                case 2:
                     _a.sent();
                     return [2 /*return*/];
             }
@@ -614,6 +665,39 @@ function saveOrder(order) {
     });
 }
 function updateOrder(order) {
+    return __awaiter(this, void 0, void 0, function () {
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, updateBotOrders()];
+                case 1:
+                    _a.sent();
+                    return [4 /*yield*/, request_promise_native_1.default.put('http://localhost:3000/db/orders/' + order.order_id, {
+                            body: Object.assign({ botId: botId }, order),
+                            json: true
+                        })];
+                case 2:
+                    _a.sent();
+                    return [2 /*return*/];
+            }
+        });
+    });
+}
+function removeOrder(order) {
+    return __awaiter(this, void 0, void 0, function () {
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, updateBotOrders()];
+                case 1:
+                    _a.sent();
+                    return [4 /*yield*/, request_promise_native_1.default.delete('http://localhost:3000/db/orders/' + order.order_id)];
+                case 2:
+                    _a.sent();
+                    return [2 /*return*/];
+            }
+        });
+    });
+}
+function updateBotOrders() {
     return __awaiter(this, void 0, void 0, function () {
         var bot;
         return __generator(this, function (_a) {
@@ -625,9 +709,6 @@ function updateOrder(order) {
                     bot.config.orders = orders;
                     return [4 /*yield*/, request_promise_native_1.default.put('http://localhost:3000/db/bots/' + botId, { json: true, body: bot })];
                 case 2:
-                    _a.sent();
-                    return [4 /*yield*/, request_promise_native_1.default.put('http://localhost:3000/db/orders/' + order.order_id, { body: Object.assign({ botId: botId }, order), json: true })];
-                case 3:
                     _a.sent();
                     return [2 /*return*/];
             }

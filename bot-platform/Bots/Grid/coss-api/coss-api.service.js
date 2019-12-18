@@ -119,7 +119,7 @@ var CossApiService = /** @class */ (function () {
     };
     // Trade Details
     CossApiService.prototype.getTradeDetails = function (trade) {
-        return request.post(this.TRADE + "order/trade-detail", { json: true });
+        return this.privatePost(this.TRADE + "order/trade-detail", trade);
     };
     // Open Orders
     CossApiService.prototype.getOpenOrders = function (orders) {
@@ -127,7 +127,7 @@ var CossApiService = /** @class */ (function () {
     };
     // Completed Orders
     CossApiService.prototype.getCompletedOrders = function (orders) {
-        return request.post(this.TRADE + "order/list/completed", { json: true });
+        return this.privatePost(this.TRADE + "order/list/completed", orders);
     };
     // All Orders
     CossApiService.prototype.getAllOrders = function (orders) {

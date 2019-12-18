@@ -423,7 +423,7 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
           this.form.value.lowerWall
         ).toNumber(),
         Math.pow(10, this.precisionPrice)
-      ).toNumber();
+      ).toNumber() + 1;
     } else {
       return 0;
     }

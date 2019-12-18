@@ -1,5 +1,5 @@
 import {CossApiService} from './coss-api/coss-api.service';
-import {CancelOrderResponse, Order, OrderResponse, TradeDetailsArray} from "./swaggerSchema";
+import {CancelOrderResponse, Order, OrderListResponse, OrderResponse, TradeDetailsArray} from "./swaggerSchema";
 import request from "request-promise-native";
 import Decimal from "decimal.js";
 
@@ -51,7 +51,6 @@ let cossApi: CossApiService;
 let orders: Array<OrderResponse> = [];
 
 let stop = false;
-
 process.on('message', async (msg) => {
     if (msg.action === 'start') {
         stop = false;
@@ -161,64 +160,63 @@ async function checkOrders() {
         process.send("No orders found");
         process.exit(0);
     }
-    orders = orders.filter(order => {
-        return order.status.toUpperCase() !== "FILLED"
-    });
 
-    for (let i = 0; i < orders.length; i++) {
-        if (stop) {
-            break;
-        }
-        let fetchedOrder;
-        try {
-            fetchedOrder = await cossApi.getOrderDetails({
-                order_id: orders[i].order_id,
-                recvWindow: 9999999,
-                timestamp: Date.now()
-            });
-        } catch (e) {
-
+    try {
+        const filledOrders = await fetchCompletedOrders(config.pair);
+        for (let i = 0; i < orders.length; i++) {
+            for (let filledOrder of filledOrders) {
+                if (orders[i].order_id === filledOrder.order_id) {
+                    orders[i] = filledOrder;
+                    await updateOrder(orders[i]);
+                }
+            }
         }
 
-        if (fetchedOrder && fetchedOrder.order_id) {
-            orders[i] = fetchedOrder;
-            await updateOrder(fetchedOrder);
-
-            if (orders[i].status.toUpperCase() === "FILLED") {
-                console.log("Found filled order", orders[i]);
+        for (let i = 0; i < orders.length; i++) {
+            if (stop) {
+                break;
+            }
+            if (orders[i].status.toUpperCase() === 'FILLED') {
                 await sendTelegram(botName + ': Filled a ' + orders[i].order_side + ' order on pair ' + orders[i].order_symbol + ' with amount ' + orders[i].order_size + ' @ ' + orders[i].order_price);
-                if (config.grids) {
-                    let index = config.grids.indexOf(parseFloat(orders[i].order_price));
 
-                    if (orders[i].order_side === "BUY") {
-                        index--;
-                        try {
-                            await placeOrder('SELL', config.grids[index].toString(), Decimal.div(config.amountPerGrid, config.grids[index]).toNumber().toFixed(config.precisionAmount), config.pair);
-                            await request.delete('http://localhost:3000/db/orders/' + orders[i].order_id);
-                            await saveHistory(orders[i].order_id);
-                        } catch (e) {
-                            orders[i].status = "PARTIAL_FILL";
-                            console.log(e);
-                            await sendTelegram('Failed to place matching order. Will retry next cycle');
-                        }
-                    } else {
-                        index++;
-                        try {
-                            await placeOrder('BUY', config.grids[index].toString(), Decimal.div(config.amountPerGrid, config.grids[index]).toNumber().toFixed(config.precisionAmount), config.pair);
-                            await request.delete('http://localhost:3000/db/orders/' + orders[i].order_id);
-                            await saveHistory(orders[i].order_id);
-                        } catch (e) {
-                            orders[i].status = "PARTIAL_FILL";
-                            console.log(e);
-                            await sendTelegram('Failed to place matching order. Will retry next cycle');
-                        }
+                // @ts-ignore
+                let index = config.grids.indexOf(parseFloat(orders[i].order_price));
+
+                if (orders[i].order_side === "BUY") {
+                    index--;
+                    try {
+                        // @ts-ignore
+                        await placeOrder('SELL', config.grids[index].toString(), Decimal.div(config.amountPerGrid, config.grids[index]).toNumber().toFixed(config.precisionAmount), config.pair);
+                        await removeOrder(orders[i]);
+                        await saveHistory(orders[i].order_id);
+                    } catch (e) {
+                        orders[i].status = "PARTIAL_FILL";
+                        console.log(e);
+                        await sendTelegram('Failed to place matching order. Will retry next cycle');
+                    }
+                } else {
+                    index++;
+                    try {
+                        // @ts-ignore
+                        await placeOrder('BUY', config.grids[index].toString(), Decimal.div(config.amountPerGrid, config.grids[index]).toNumber().toFixed(config.precisionAmount), config.pair);
+                        await removeOrder(orders[i]);
+                        await saveHistory(orders[i].order_id);
+                    } catch (e) {
+                        orders[i].status = "PARTIAL_FILL";
+                        console.log(e);
+                        await sendTelegram('Failed to place matching order. Will retry next cycle');
                     }
                 }
             }
-        } else {
-            console.log('Unable to get last status of order:', orders[i]);
         }
+
+        orders = orders.filter(order => {
+            return order.status.toUpperCase() !== "FILLED"
+        });
+    } catch (e) {
+        console.log(e);
     }
+
     await checkOrders();
 }
 
@@ -304,12 +302,9 @@ async function cancelAllOrders(): Promise<boolean> {
         for (let order of orders) {
             try {
                 await cancelOrder(order);
-                await request.delete('http://localhost:3000/db/orders/' + order.order_id);
+                await removeOrder(order);
                 await saveHistory(order.order_id);
-                const bot: Bot = await request.get('http://localhost:3000/db/bots/' + botId, {json: true});
-                // @ts-ignore
-                bot.config.orders = orders;
-                await request.put('http://localhost:3000/db/bots/' + botId, {json: true, body: bot});
+
                 // await sendTelegram(botName + ': Canceled a ' + order.order_side + ' order on pair ' + order.order_symbol + ' with amount ' + order.order_size + ' @ ' + order.order_price);
             } catch (e) {
                 // @ts-ignore
@@ -320,6 +315,35 @@ async function cancelAllOrders(): Promise<boolean> {
         }
         await sendTelegram(botName + ': Canceled ' + orders.length + ' orders');
         resolve(true);
+    });
+}
+
+async function fetchCompletedOrders(symbol: string): Promise<Array<OrderResponse>> {
+    return new Promise(async (resolve, reject) => {
+        for (let i = 0; i < 3; i++) {
+            try {
+                const completedOrders: OrderListResponse = await cossApi.getCompletedOrders({
+                    timestamp: Date.now(),
+                    recvWindow: 99999999,
+                    symbol: symbol,
+                    limit: 50,
+                    page: 0,
+                });
+
+                if (completedOrders && completedOrders.list) {
+                    resolve(completedOrders.list);
+                    break;
+                } else {
+                    if (i === 2) {
+                        reject('Unable to fetch completed orders');
+                    }
+                }
+            } catch (e) {
+                if (i === 2) {
+                    reject('Unable to fetch completed orders');
+                }
+            }
+        }
     });
 }
 
@@ -334,7 +358,10 @@ async function saveHistory(order_id: string) {
                 });
 
                 for (let tradeDetail of tradeDetails) {
-                    await request.post('http://localhost:3000/db/historys', {json: true, body: Object.assign({botId: botId}, tradeDetail)});
+                    await request.post('http://localhost:3000/db/historys', {
+                        json: true,
+                        body: Object.assign({botId: botId}, tradeDetail)
+                    });
                 }
                 resolve();
             } catch (e) {
@@ -346,17 +373,26 @@ async function saveHistory(order_id: string) {
 }
 
 async function saveOrder(order: OrderResponse) {
-    const bot: Bot = await request.get('http://localhost:3000/db/bots/' + botId, {json: true});
-    // @ts-ignore
-    bot.config.orders = orders;
-    await request.put('http://localhost:3000/db/bots/' + botId, {json: true, body: bot});
+    await updateBotOrders();
     await request.post('http://localhost:3000/db/orders', {body: Object.assign({botId: botId}, order), json: true})
 }
 
 async function updateOrder(order: OrderResponse) {
+    await updateBotOrders();
+    await request.put('http://localhost:3000/db/orders/' + order.order_id, {
+        body: Object.assign({botId: botId}, order),
+        json: true
+    })
+}
+
+async function removeOrder(order: OrderResponse) {
+    await updateBotOrders();
+    await request.delete('http://localhost:3000/db/orders/' + order.order_id);
+}
+
+async function updateBotOrders() {
     const bot: Bot = await request.get('http://localhost:3000/db/bots/' + botId, {json: true});
     // @ts-ignore
     bot.config.orders = orders;
     await request.put('http://localhost:3000/db/bots/' + botId, {json: true, body: bot});
-    await request.put('http://localhost:3000/db/orders/' + order.order_id, {body: Object.assign({botId: botId}, order), json: true})
 }

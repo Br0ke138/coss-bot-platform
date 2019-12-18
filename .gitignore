@@ -51,6 +51,7 @@ Thumbs.db
 /bot-platform/keys.json
 /bot-platform/orders.json
 /bot-platform/telegrams.json
+/bot-platform/historys.json
 
 # Executables
 /bot-platform/coss-grid*
