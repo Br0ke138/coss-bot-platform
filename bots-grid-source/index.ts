@@ -59,6 +59,7 @@ process.on('message', async (msg) => {
         console.log('Bot started', botId);
         try {
             const bot: Bot = await request.get('http://localhost:3000/db/bots/' + botId, {json: true});
+
             if (bot.config) {
                 config = bot.config;
                 botName = bot.name;
@@ -66,42 +67,45 @@ process.on('message', async (msg) => {
                 await sendTelegram(botName + ' started on pair: ' + config.pair);
                 const keys: Key = await request.get('http://localhost:3000/db/keys/' + bot.keys.id, {json: true});
                 cossApi = new CossApiService(keys.public, keys.secret);
+                if ((!config.orders || config.orders.length < 1) && config.grids) {
+                    try {
+                        price = parseFloat((await cossApi.getMarketPrice(config.pair))[0].price);
 
-                try {
-                    price = parseFloat((await cossApi.getMarketPrice(config.pair))[0].price);
-                } catch (e) {
-                    // @ts-ignore
-                    console.log("Unable to fetch price", botId);
-                    process.exit(0);
+
+                        let grids = config.grids;
+                        const closest = grids.reduce((prev, curr) => (Math.abs(curr - price) < Math.abs(prev - price) ? curr : prev));
+                        grids.splice(grids.indexOf(closest), 1);
+
+                        for (let grid of config.grids) {
+                            try {
+                                // @ts-ignore
+                                await placeOrder(parseFloat(grid) > price ? 'SELL' : 'BUY', grid.toString(), Decimal.div(config.amountPerGrid, grid).toNumber().toFixed(config.precisionAmount), config.pair);
+                            } catch (e) {
+                                console.log(e);
+                                console.log('Failed to place all orders. Bot will cancel all orders it made');
+                                await sendTelegram(botName + ' failed to place all orders and will cancel already created orders');
+                                await cancelAllOrders();
+                                console.log('All orders canceled. Bot will enter status stopped');
+                                await sendTelegram(botName + ' canceled all orders');
+                                await changeBotStatus(BotStatus.Stopped);
+                            }
+                        }
+
+                        await checkOrders();
+
+                    } catch (e) {
+                        // @ts-ignore
+                        console.log("Unable to fetch price", botId);
+                        await changeBotStatus(BotStatus.Crashed);
+                    }
                 }
-
                 if (config.orders && config.orders.length > 0) {
                     orders = config.orders;
                     sendTelegram(botName + ': Will continue operation. ' + config.orders.length + ' Orders found');
                     await checkOrders();
                 }
-                if ((!config.orders || config.orders.length < 1) && config.grids) {
-                    let grids = config.grids;
-                    const closest = grids.reduce((prev, curr) => (Math.abs(curr - price) < Math.abs(prev - price) ? curr : prev));
-                    grids.splice(grids.indexOf(closest), 1);
-
-                    for (let grid of config.grids) {
-                        try {
-                            // @ts-ignore
-                            await placeOrder(parseFloat(grid) > price ? 'SELL' : 'BUY', grid.toString(), Decimal.div(config.amountPerGrid, grid).toNumber().toFixed(config.precisionAmount), config.pair);
-                        } catch (e) {
-                            console.log(e);
-                            console.log('Failed to place all orders. Bot will cancel all orders it made');
-                            await sendTelegram(botName + ' failed to place all orders and will cancel already created orders');
-                            await cancelAllOrders();
-                            console.log('All orders canceled. Bot will enter status stopped');
-                            await sendTelegram(botName + ' canceled all orders');
-                            await changeBotStatus(BotStatus.Stopped);
-                        }
-                    }
-
-                    await checkOrders();
-                }
+            } else {
+                throw 'No Config found';
             }
         } catch (e) {
             await changeBotStatus(BotStatus.Crashed);
