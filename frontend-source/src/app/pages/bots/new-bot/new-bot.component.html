@@ -21,6 +21,6 @@
     </mat-select>
   </mat-form-field>
 
-  <button mat-raised-button color="primary" [disabled]="form.value.name === null || form.value.type === null || form.value.keys" (click)="dialogRef.close(form.value)">Create</button>
+  <button mat-raised-button color="primary" [disabled]="form.value.name === null || form.value.type === null || form.value.keys === null" (click)="dialogRef.close(form.value)">Create</button>
   <button mat-button (click)="dialogRef.close(null)">Abort</button>
 </form>
