@@ -17,6 +17,7 @@ import {
 import {map, startWith, take} from 'rxjs/operators';
 import {HttpClient} from '@angular/common/http';
 import {Decimal} from 'decimal.js';
+import {OrderResponse} from '../../../../../../bots-grid-source/swaggerSchema';
 
 @Component({
   selector: 'app-bots-detail',
@@ -101,6 +102,7 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
   };
 
   colors: string[];
+  colorsRunning: string[];
   grid: ApexGrid = {
     yaxis: {
       lines: {
@@ -153,6 +155,20 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
   pairSearch = new FormControl();
   filteredOptions: Observable<any>;
 
+  buyOrders: Array<{
+    price: number;
+    asset: string;
+    quote: number;
+    profit: string;
+  }> = [];
+
+  sellOrders: Array<{
+    price: number;
+    asset: string;
+    quote: number;
+    profit: string;
+  }> = [];
+
   constructor(
     private route: ActivatedRoute,
     public botsService: BotsService,
@@ -201,6 +217,7 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
               numberOfGrids: new FormControl(this.bot.config.numberOfGrids),
               amountPerGrid: new FormControl(this.bot.config.amountPerGrid),
             });
+
           } else {
             this.form = new FormGroup({
               pair: new FormControl(),
@@ -210,15 +227,18 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
               amountPerGrid: new FormControl(),
             });
           }
+
+          if (this.bot.orders && this.bot.orders.length > 0 && this.bot.status === 'Running') {
+            this.fillOrders(this.bot.orders);
+          }
           this.form.valueChanges.subscribe((value) => {
             this.editedForm = true;
 
-            console.log(value);
             if (this.currentPair !== value.pair) {
               this.getInfos();
             }
           });
-          if (this.bot.status === 'Running') {
+          if (this.bot.status === 'Running' || this.bot.status === 'Crashed') {
             this.form.disable();
           }
           const self = this;
@@ -230,11 +250,99 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
               } else {
                 this.form.enable();
               }
+
+              if (self.bot.orders && self.bot.orders.length > 0 && self.bot.status === 'Running') {
+                self.fillOrders(self.bot.orders);
+              }
             });
-          }, 5000);
+          }, 10000);
         }
       });
     });
+  }
+
+  private fillOrders(orders: Array<OrderResponse>) {
+    const buyOrders: Array<{
+      price: number;
+      asset: string;
+      quote: number;
+      profit: string;
+    }> = [];
+
+    const sellOrders: Array<{
+      price: number;
+      asset: string;
+      quote: number;
+      profit: string;
+    }> = [];
+
+    orders.forEach(order => {
+      if (order.order_side === 'BUY') {
+        buyOrders.push({
+          price: parseFloat(order.order_price),
+          asset: Decimal.div(this.form.value.amountPerGrid, parseFloat(order.order_price)).toNumber().toFixed(this.precisionAmount),
+          quote: this.form.value.amountPerGrid,
+          profit: ((((parseFloat(order.order_price) + this.margin) / parseFloat(order.order_price)) - 1) * 100).toFixed(2),
+        });
+      } else {
+        sellOrders.push({
+          price: parseFloat(order.order_price),
+          asset: Decimal.div(this.form.value.amountPerGrid, parseFloat(order.order_price)).toNumber().toFixed(this.precisionAmount),
+          quote: this.form.value.amountPerGrid,
+          profit: ((((parseFloat(order.order_price) + this.margin) / parseFloat(order.order_price)) - 1) * 100).toFixed(2),
+        });
+      }
+    });
+    this.buyOrders = buyOrders;
+    this.sellOrders = sellOrders;
+
+    this.http.get('http://localhost:3000/api/engine/cs?symbol=' + this.bot.config.pair + '&tt=12h')
+      .pipe(take(1))
+      .subscribe((cs: { series: Array<any> }) => {
+        const data = [];
+        const dateTimes = [];
+
+        cs.series.forEach(entry => {
+          const dataEntry = {
+            x: new Date(entry[0]),
+            y: [
+              parseFloat(entry[1]),
+              parseFloat(entry[2]),
+              parseFloat(entry[3]),
+              parseFloat(entry[4]),
+            ]
+          };
+          data.push(dataEntry);
+          dateTimes.push(entry[0]);
+        });
+
+        const seriesRunning = [{
+          name: '2h',
+          // @ts-ignore
+          type: 'candlestick',
+          data
+        }];
+        this.colorsRunning = ['black'];
+
+        orders.forEach((order, index) => {
+          const array = [];
+          dateTimes.forEach(dateTime => {
+            array.push({
+              x: new Date(dateTime),
+              y: parseFloat(order.order_price)
+            });
+          });
+          seriesRunning.push({
+            name: 'grid #' + (index + 1),
+            // @ts-ignore
+            type: 'line',
+            data: array
+          });
+          this.colorsRunning.push('white');
+        });
+
+        this.seriesRunning = seriesRunning;
+      });
   }
 
   private _filter(value: string): string[] {
@@ -242,6 +350,7 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
 
     return this.symbols.filter(symbol => symbol.toLowerCase().includes(filterValue));
   }
+
   getInfos() {
     if (this.exchangeInfo && this.form.value.pair) {
       this.precisionPrice = 0;
@@ -258,7 +367,6 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
         }
       });
     }
-    console.log(this.precisionPrice, this.minOrderSize);
   }
 
   startBot() {
@@ -266,6 +374,10 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
       this.botsService.getBot(this.bot.id).pipe(take(1)).subscribe(bot => {
         this.bot = bot;
         this.form.disable();
+
+        if (this.bot.orders && this.bot.orders.length > 0 && this.bot.status === 'Running') {
+          this.fillOrders(this.bot.orders);
+        }
       });
     });
   }
@@ -440,7 +552,7 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
               this.form.value.upperWall,
               this.form.value.lowerWall
             ).toNumber(),
-            this.form.value.numberOfGrids
+            this.form.value.numberOfGrids - 1
           ).toNumber()
         ).toNumber()
       ),
@@ -449,14 +561,24 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
 
   }
 
-  getBuyOrders(): Array<number> {
+  getBuyOrders(): Array<{
+    price: number;
+    asset: string;
+    quote: number;
+    profit: string;
+  }> {
     const grids = this.grids.filter(grid => {
       return grid < this.current;
     });
 
     this.totalBuy = 0;
 
-    const dataSource = [];
+    const dataSource: Array<{
+      price: number;
+      asset: string;
+      quote: number;
+      profit: string;
+    }> = [];
     grids.forEach(grid => {
       dataSource.push({
         price: grid,
@@ -471,14 +593,24 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
     return dataSource;
   }
 
-  getSellOrders(): Array<number> {
+  getSellOrders(): Array<{
+    price: number;
+    asset: string;
+    quote: number;
+    profit: string;
+  }> {
     const grids = this.grids.filter(grid => {
       return grid > this.current;
     });
 
     this.totalSell = 0;
 
-    const dataSource = [];
+    const dataSource: Array<{
+      price: number;
+      asset: string;
+      quote: number;
+      profit: string;
+    }> = [];
     grids.forEach(grid => {
       dataSource.push({
         price: grid,
@@ -496,7 +628,7 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     if (this.interval) {
-      clearInterval(this.interval)
+      clearInterval(this.interval);
     }
   }
 

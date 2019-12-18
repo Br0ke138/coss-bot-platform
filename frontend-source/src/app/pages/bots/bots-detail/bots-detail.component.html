@@ -13,17 +13,12 @@
 </mat-card>
 
 <div class="flex-container">
-
   <mat-card>
     <mat-card-title>Details</mat-card-title>
     <p>Name: {{ bot?.name }} </p>
     <p>Type: {{ bot?.type }} </p>
     <p>Status: {{ bot?.status }} </p>
   </mat-card>
-
-  <!--<apx-chart *ngIf="bot?.status === 'Running' && bot?.config?.orders && bot?.config?.orders.length > 0 && seriesRunning && seriesRunning.length > 0" [tooltip]="tooltip" [series]="seriesRunning" [chart]="chart" [title]="title"-->
-             <!--[xaxis]="xAxis" [yaxis]="yAxis" [stroke]="stroke" [colors]="colors" [grid]="grid"-->
-             <!--[legend]="legend"></apx-chart>-->
 </div>
 
 <mat-card>
@@ -43,14 +38,13 @@
 </mat-card>
 
 <ng-container *ngIf="bot?.type === 'GRID'">
-  <mat-card>
+  <mat-card *ngIf="bot?.status === 'Init' || bot?.status === 'Stopped'">
     <mat-card-title>Configuration</mat-card-title>
 
     <div class="flex-container">
+
       <form class="example-form" [formGroup]="form">
-        <div *ngIf="bot?.status === 'Running'" style="padding-bottom: 4px;">
-          Bot has to be stopped to change the settings.
-        </div>
+
 
         <mat-form-field class="example-full-width">
           <input type="text" placeholder="Pair" matInput [formControl]="pairSearch" [matAutocomplete]="auto">
@@ -101,7 +95,6 @@
                  [xaxis]="xAxis" [yaxis]="yAxis" [stroke]="stroke" [colors]="colors" [grid]="grid"
                  [legend]="legend"></apx-chart>
     </div>
-
     <div class="flex-container" *ngIf="showChart && form.value.amountPerGrid > 0">
       <h2>Initial Buy Orders (Need {{ totalBuy }} {{ currentPair ? currentPair.split('_')[1] : '' }})</h2>
       <h2>Initial Sell Orders (Need {{ totalSell }} {{ currentPair ? currentPair.split('_')[0] : '' }})</h2>
@@ -111,7 +104,22 @@
       <app-order-table [pair]="currentPair" [dataSource]="getSellOrders()"></app-order-table>
     </div>
 
-
   </mat-card>
+
+  <ng-container *ngIf="bot?.status === 'Running'">
+    <mat-card>
+      <mat-card-title>Orders</mat-card-title>
+      <div class="flex-container">
+        <apx-chart [tooltip]="tooltip" [series]="seriesRunning" [chart]="chart" [title]="title"
+                   [xaxis]="xAxis" [yaxis]="yAxis" [stroke]="stroke" [colors]="colorsRunning" [grid]="grid"
+                   [legend]="legend"></apx-chart>
+      </div>
+      <div class="flex-container">
+        <app-order-table [pair]="currentPair" [dataSource]="buyOrders"></app-order-table>
+        <app-order-table [pair]="currentPair" [dataSource]="sellOrders"></app-order-table>
+      </div>
+    </mat-card>
+  </ng-container>
+
 
 </ng-container>
