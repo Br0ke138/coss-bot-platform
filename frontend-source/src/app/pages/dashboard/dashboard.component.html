@@ -10,3 +10,11 @@
 <br />
 <br />
 <p>Trade History is already saved. Display of Profit is still WIP and will come the next days</p>
+
+<div>
+  <ul>
+    <li *ngFor="let entry of history">
+      {{ entry.order_id }}
+    </li>
+  </ul>
+</div>
