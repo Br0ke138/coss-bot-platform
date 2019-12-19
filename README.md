@@ -24,8 +24,9 @@ Telegram User: @Br0ke138
 ## Build manually
 - Install Node.js
 - Download https://github.com/Br0ke138/coss-bot-platform/archive/master.zip
+- unzip file
 - Open Terminal/Cmd
-- Navigate into <path-to-the-bot-folder>/coss-bot-platform/bot-platform
+- Navigate into <path-to-the-bot-folder>/coss-bot-platform-master/bot-platform
 - npm install
 - Build application
   - Windows: ./node_modules/pkg/lib-es5/bin.js package.json -t win
