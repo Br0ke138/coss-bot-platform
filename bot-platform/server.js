@@ -29,23 +29,27 @@ let teleBot;
 let chatId;
 
 initTelegram();
-function initTelegram() {
+async function initTelegram() {
+
     const filename = process.cwd() + '/telegrams.json';
     let telegrams = helper.readJSONFile(filename);
     if (telegrams.length > 0) {
         if (!teleBot) {
+            console.log('Telgram bot started');
             teleBot = new TelegramBot(telegrams[0].botId, {
                 polling: true
             });
+
+            teleBot.on('message', (msg, match) => {
+                const chatId = msg.chat.id;
+                teleBot.sendMessage(chatId, chatId);
+            });
         }
 
-        teleBot.on('message', (msg, match) => {
-            const chatId = msg.chat.id;
-            teleBot.sendMessage(chatId, chatId);
-        });
         if (telegrams[0].chatId && telegrams[0].chatId !== "") {
+            console.log('ChatId found. Bot will message you updates');
             chatId = telegrams[0].chatId;
-            sendTelegram('Bot platform successfully connected');
+            await sendTelegram('Bot platform successfully connected');
         }
     }
 }
@@ -88,7 +92,7 @@ app.use('/botApi/start/:id', async (req, res) => {
         return bot.id === req.params.id;
     });
     if (!bot) {
-        const forked = fork(process.cwd() + '/Bots/Grid/index.js');
+        const forked = fork(path.join(__dirname, './Bots/Grid/index.js'));
 
         forked.on('message', (msg) => {
             console.log('Message from child', msg);
@@ -180,20 +184,20 @@ app.use('/botApi/stop/:id', (req, res) => {
     }
 });
 
-function sendTelegram(text) {
+async function sendTelegram(text) {
     console.log(text);
     if (teleBot && chatId) {
         teleBot.sendMessage(chatId, text);
     }
 }
 
-router.post('/telegramApi/telegram', (req, res) => {
-    sendTelegram(req.body.msg);
+router.post('/telegramApi/telegram', async (req, res) => {
+    await sendTelegram(req.body.msg);
     res.json({success: true});
 });
 
-router.get('/telegramApi/initTelegram', (req, res) => {
-    initTelegram();
+router.get('/telegramApi/initTelegram', async (req, res) => {
+    await initTelegram();
     res.json({success: true});
 });
 

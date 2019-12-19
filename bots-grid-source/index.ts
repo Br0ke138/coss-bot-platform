@@ -122,8 +122,8 @@ process.on('message', async (msg) => {
             orders = bot.config.orders;
             const keys: Key = await request.get('http://localhost:3000/db/keys/' + bot.keys.id, {json: true});
             cossApi = new CossApiService(keys.public, keys.secret);
+            await checkOrders();
         }
-        await checkOrders();
         // @ts-ignore
         await sendTelegram(botName + ' stopped on pair: ' + bot.config.pair);
     }
@@ -156,72 +156,72 @@ async function checkOrders() {
             console.log('Failed to cancel all orders. Bot will enter status crashed');
         }
         return;
-    }
-
-    if (orders.length < 1) {
-        changeBotStatus(BotStatus.Crashed);
-        // @ts-ignore
-        process.send("No orders found");
-        process.exit(0);
-    }
-
-    try {
-        const filledOrders = await fetchCompletedOrders(config.pair);
-        for (let i = 0; i < orders.length; i++) {
-            for (let filledOrder of filledOrders) {
-                if (orders[i].order_id === filledOrder.order_id) {
-                    orders[i] = filledOrder;
-                    await updateOrder(orders[i]);
-                }
-            }
+    } else {
+        if (orders.length < 1) {
+            changeBotStatus(BotStatus.Crashed);
+            // @ts-ignore
+            process.send("No orders found");
+            process.exit(0);
         }
 
-        for (let i = 0; i < orders.length; i++) {
-            if (stop) {
-                break;
-            }
-            if (orders[i].status.toUpperCase() === 'FILLED') {
-                await sendTelegram(botName + ': Filled a ' + orders[i].order_side + ' order on pair ' + orders[i].order_symbol + ' with amount ' + orders[i].order_size + ' @ ' + orders[i].order_price);
-
-                // @ts-ignore
-                let index = config.grids.indexOf(parseFloat(orders[i].order_price));
-
-                if (orders[i].order_side === "BUY") {
-                    index--;
-                    try {
-                        // @ts-ignore
-                        await placeOrder('SELL', config.grids[index].toString(), Decimal.div(config.amountPerGrid, config.grids[index]).toNumber().toFixed(config.precisionAmount), config.pair);
-                        await removeOrder(orders[i]);
-                        await saveHistory(orders[i].order_id);
-                    } catch (e) {
-                        orders[i].status = "PARTIAL_FILL";
-                        console.log(e);
-                        await sendTelegram('Failed to place matching order. Will retry next cycle');
-                    }
-                } else {
-                    index++;
-                    try {
-                        // @ts-ignore
-                        await placeOrder('BUY', config.grids[index].toString(), Decimal.div(config.amountPerGrid, config.grids[index]).toNumber().toFixed(config.precisionAmount), config.pair);
-                        await removeOrder(orders[i]);
-                        await saveHistory(orders[i].order_id);
-                    } catch (e) {
-                        orders[i].status = "PARTIAL_FILL";
-                        console.log(e);
-                        await sendTelegram('Failed to place matching order. Will retry next cycle');
+        try {
+            const filledOrders = await fetchCompletedOrders(config.pair);
+            for (let i = 0; i < orders.length; i++) {
+                for (let filledOrder of filledOrders) {
+                    if (orders[i].order_id === filledOrder.order_id) {
+                        orders[i] = filledOrder;
+                        await updateOrder(orders[i]);
                     }
                 }
             }
+
+            for (let i = 0; i < orders.length; i++) {
+                if (stop) {
+                    break;
+                }
+                if (orders[i].status.toUpperCase() === 'FILLED') {
+                    await sendTelegram(botName + ': Filled a ' + orders[i].order_side + ' order on pair ' + orders[i].order_symbol + ' with amount ' + orders[i].order_size + ' @ ' + orders[i].order_price);
+
+                    // @ts-ignore
+                    let index = config.grids.indexOf(parseFloat(orders[i].order_price));
+
+                    if (orders[i].order_side === "BUY") {
+                        index--;
+                        try {
+                            // @ts-ignore
+                            await placeOrder('SELL', config.grids[index].toString(), Decimal.div(config.amountPerGrid, config.grids[index]).toNumber().toFixed(config.precisionAmount), config.pair);
+                            await removeOrder(orders[i]);
+                            await saveHistory(orders[i].order_id);
+                        } catch (e) {
+                            orders[i].status = "PARTIAL_FILL";
+                            console.log(e);
+                            await sendTelegram('Failed to place matching order. Will retry next cycle');
+                        }
+                    } else {
+                        index++;
+                        try {
+                            // @ts-ignore
+                            await placeOrder('BUY', config.grids[index].toString(), Decimal.div(config.amountPerGrid, config.grids[index]).toNumber().toFixed(config.precisionAmount), config.pair);
+                            await removeOrder(orders[i]);
+                            await saveHistory(orders[i].order_id);
+                        } catch (e) {
+                            orders[i].status = "PARTIAL_FILL";
+                            console.log(e);
+                            await sendTelegram('Failed to place matching order. Will retry next cycle');
+                        }
+                    }
+                }
+            }
+
+            orders = orders.filter(order => {
+                return order.status.toUpperCase() !== "FILLED"
+            });
+        } catch (e) {
+            console.log(e);
         }
 
-        orders = orders.filter(order => {
-            return order.status.toUpperCase() !== "FILLED"
-        });
-    } catch (e) {
-        console.log(e);
+        await checkOrders();
     }
-
-    await checkOrders();
 }
 
 async function placeOrder(side: 'SELL' | 'BUY', price: string, amount: string, symbol: string): Promise<OrderResponse> {

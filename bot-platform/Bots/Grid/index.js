@@ -61,22 +61,22 @@ var cossApi;
 var orders = [];
 var stop = false;
 process.on('message', function (msg) { return __awaiter(void 0, void 0, void 0, function () {
-    var bot, keys, _a, e_1, grids, closest, _i, _b, grid, e_2, e_3, bot, keys;
+    var bot, keys, _a, grids, closest, _i, _b, grid, e_1, e_2, e_3, bot, keys;
     return __generator(this, function (_c) {
         switch (_c.label) {
             case 0:
-                if (!(msg.action === 'start')) return [3 /*break*/, 25];
+                if (!(msg.action === 'start')) return [3 /*break*/, 27];
                 stop = false;
                 botId = msg.id;
                 // @ts-ignore
                 console.log('Bot started', botId);
                 _c.label = 1;
             case 1:
-                _c.trys.push([1, 23, , 25]);
+                _c.trys.push([1, 25, , 27]);
                 return [4 /*yield*/, request_promise_native_1.default.get('http://localhost:3000/db/bots/' + botId, { json: true })];
             case 2:
                 bot = _c.sent();
-                if (!bot.config) return [3 /*break*/, 22];
+                if (!bot.config) return [3 /*break*/, 23];
                 config = bot.config;
                 botName = bot.name;
                 return [4 /*yield*/, sendTelegram(botName + ' started on pair: ' + config.pair)];
@@ -86,106 +86,109 @@ process.on('message', function (msg) { return __awaiter(void 0, void 0, void 0, 
             case 4:
                 keys = _c.sent();
                 cossApi = new coss_api_service_1.CossApiService(keys.public, keys.secret);
+                if (!((!config.orders || config.orders.length < 1) && config.grids)) return [3 /*break*/, 20];
                 _c.label = 5;
             case 5:
-                _c.trys.push([5, 7, , 8]);
+                _c.trys.push([5, 18, , 20]);
                 _a = parseFloat;
                 return [4 /*yield*/, cossApi.getMarketPrice(config.pair)];
             case 6:
                 price = _a.apply(void 0, [(_c.sent())[0].price]);
-                return [3 /*break*/, 8];
-            case 7:
-                e_1 = _c.sent();
-                // @ts-ignore
-                console.log("Unable to fetch price", botId);
-                process.exit(0);
-                return [3 /*break*/, 8];
-            case 8:
-                if (!(config.orders && config.orders.length > 0)) return [3 /*break*/, 10];
-                orders = config.orders;
-                sendTelegram(botName + ': Will continue operation. ' + config.orders.length + ' Orders found');
-                return [4 /*yield*/, checkOrders()];
-            case 9:
-                _c.sent();
-                _c.label = 10;
-            case 10:
-                if (!((!config.orders || config.orders.length < 1) && config.grids)) return [3 /*break*/, 22];
                 grids = config.grids;
                 closest = grids.reduce(function (prev, curr) { return (Math.abs(curr - price) < Math.abs(prev - price) ? curr : prev); });
                 grids.splice(grids.indexOf(closest), 1);
                 _i = 0, _b = config.grids;
-                _c.label = 11;
-            case 11:
-                if (!(_i < _b.length)) return [3 /*break*/, 20];
+                _c.label = 7;
+            case 7:
+                if (!(_i < _b.length)) return [3 /*break*/, 16];
                 grid = _b[_i];
-                _c.label = 12;
-            case 12:
-                _c.trys.push([12, 14, , 19]);
+                _c.label = 8;
+            case 8:
+                _c.trys.push([8, 10, , 15]);
                 // @ts-ignore
                 return [4 /*yield*/, placeOrder(parseFloat(grid) > price ? 'SELL' : 'BUY', grid.toString(), decimal_js_1.default.div(config.amountPerGrid, grid).toNumber().toFixed(config.precisionAmount), config.pair)];
-            case 13:
+            case 9:
                 // @ts-ignore
                 _c.sent();
-                return [3 /*break*/, 19];
-            case 14:
-                e_2 = _c.sent();
-                console.log(e_2);
+                return [3 /*break*/, 15];
+            case 10:
+                e_1 = _c.sent();
+                console.log(e_1);
                 console.log('Failed to place all orders. Bot will cancel all orders it made');
                 return [4 /*yield*/, sendTelegram(botName + ' failed to place all orders and will cancel already created orders')];
-            case 15:
+            case 11:
                 _c.sent();
                 return [4 /*yield*/, cancelAllOrders()];
-            case 16:
+            case 12:
                 _c.sent();
                 console.log('All orders canceled. Bot will enter status stopped');
                 return [4 /*yield*/, sendTelegram(botName + ' canceled all orders')];
-            case 17:
+            case 13:
                 _c.sent();
                 return [4 /*yield*/, changeBotStatus(BotStatus.Stopped)];
-            case 18:
+            case 14:
                 _c.sent();
-                return [3 /*break*/, 19];
-            case 19:
+                return [3 /*break*/, 15];
+            case 15:
                 _i++;
-                return [3 /*break*/, 11];
-            case 20: return [4 /*yield*/, checkOrders()];
+                return [3 /*break*/, 7];
+            case 16: return [4 /*yield*/, checkOrders()];
+            case 17:
+                _c.sent();
+                return [3 /*break*/, 20];
+            case 18:
+                e_2 = _c.sent();
+                // @ts-ignore
+                console.log("Unable to fetch price", botId);
+                return [4 /*yield*/, changeBotStatus(BotStatus.Crashed)];
+            case 19:
+                _c.sent();
+                return [3 /*break*/, 20];
+            case 20:
+                if (!(config.orders && config.orders.length > 0)) return [3 /*break*/, 22];
+                orders = config.orders;
+                sendTelegram(botName + ': Will continue operation. ' + config.orders.length + ' Orders found');
+                return [4 /*yield*/, checkOrders()];
             case 21:
                 _c.sent();
                 _c.label = 22;
-            case 22: return [3 /*break*/, 25];
-            case 23:
+            case 22: return [3 /*break*/, 24];
+            case 23: throw 'No Config found';
+            case 24: return [3 /*break*/, 27];
+            case 25:
                 e_3 = _c.sent();
                 return [4 /*yield*/, changeBotStatus(BotStatus.Crashed)];
-            case 24:
+            case 26:
                 _c.sent();
                 console.log('Failed on startup. Bot will enter status Crashed');
                 console.log(e_3);
-                return [3 /*break*/, 25];
-            case 25:
-                if (!(msg.action === 'stop')) return [3 /*break*/, 31];
+                return [3 /*break*/, 27];
+            case 27:
+                if (!(msg.action === 'stop')) return [3 /*break*/, 33];
                 stop = true;
                 botId = msg.id;
                 return [4 /*yield*/, request_promise_native_1.default.get('http://localhost:3000/db/bots/' + botId, { json: true })];
-            case 26:
+            case 28:
                 bot = _c.sent();
                 botName = bot.name;
-                if (!(bot.status === 'Crashed' && bot.config && bot.config.orders)) return [3 /*break*/, 28];
+                if (!(bot.status === 'Crashed' && bot.config && bot.config.orders)) return [3 /*break*/, 31];
                 orders = bot.config.orders;
                 return [4 /*yield*/, request_promise_native_1.default.get('http://localhost:3000/db/keys/' + bot.keys.id, { json: true })];
-            case 27:
+            case 29:
                 keys = _c.sent();
                 cossApi = new coss_api_service_1.CossApiService(keys.public, keys.secret);
-                _c.label = 28;
-            case 28: return [4 /*yield*/, checkOrders()];
-            case 29:
-                _c.sent();
-                // @ts-ignore
-                return [4 /*yield*/, sendTelegram(botName + ' stopped on pair: ' + bot.config.pair)];
+                return [4 /*yield*/, checkOrders()];
             case 30:
-                // @ts-ignore
                 _c.sent();
                 _c.label = 31;
-            case 31: return [2 /*return*/];
+            case 31: 
+            // @ts-ignore
+            return [4 /*yield*/, sendTelegram(botName + ' stopped on pair: ' + bot.config.pair)];
+            case 32:
+                // @ts-ignore
+                _c.sent();
+                _c.label = 33;
+            case 33: return [2 /*return*/];
         }
     });
 }); });
@@ -364,7 +367,8 @@ function checkOrders() {
                 case 35: return [4 /*yield*/, checkOrders()];
                 case 36:
                     _a.sent();
-                    return [2 /*return*/];
+                    _a.label = 37;
+                case 37: return [2 /*return*/];
             }
         });
     });

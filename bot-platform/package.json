@@ -26,6 +26,9 @@
   "pkg": {
     "assets": [
       "frontend/**/*"
+    ],
+    "scripts": [
+      "Bots/**/*.js"
     ]
   }
 }
