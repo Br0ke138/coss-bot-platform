@@ -5,7 +5,10 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server.js",
+    "build-win": "pkg package.json -t win",
+    "build-linux": "pkg package.json -t linux",
+    "build-macos": "pkg package.json -t macos"
   },
   "author": "",
   "license": "ISC",

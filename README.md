@@ -29,9 +29,9 @@ Telegram User: @Br0ke138
 - Navigate into <path-to-the-bot-folder>/coss-bot-platform-master/bot-platform
 - npm install
 - Build application
-  - Windows: ./node_modules/pkg/lib-es5/bin.js package.json -t win
-  - Linux: ./node_modules/pkg/lib-es5/bin.js package.json -t linux
-  - MacOS: ./node_modules/pkg/lib-es5/bin.js package.json -t macos
+  - Windows: npm run build-win
+  - Linux: npm run build-linux
+  - MacOS: npm run build-macos
 
 ## STEP BY STEP EXPLANATION OF GRID TRADING 
 
