@@ -377,20 +377,14 @@ async function saveHistory(order_id: string) {
 
 async function saveOrder(order: OrderResponse) {
     await updateBotOrders();
-    await request.post('http://localhost:3000/db/orders', {body: Object.assign({botId: botId}, order), json: true})
 }
 
 async function updateOrder(order: OrderResponse) {
     await updateBotOrders();
-    await request.put('http://localhost:3000/db/orders/' + order.order_id, {
-        body: Object.assign({botId: botId}, order),
-        json: true
-    })
 }
 
 async function removeOrder(order: OrderResponse) {
     await updateBotOrders();
-    await request.delete('http://localhost:3000/db/orders/' + order.order_id);
 }
 
 async function updateBotOrders() {

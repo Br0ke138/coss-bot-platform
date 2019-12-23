@@ -660,9 +660,6 @@ function saveOrder(order) {
                 case 0: return [4 /*yield*/, updateBotOrders()];
                 case 1:
                     _a.sent();
-                    return [4 /*yield*/, request_promise_native_1.default.post('http://localhost:3000/db/orders', { body: Object.assign({ botId: botId }, order), json: true })];
-                case 2:
-                    _a.sent();
                     return [2 /*return*/];
             }
         });
@@ -675,12 +672,6 @@ function updateOrder(order) {
                 case 0: return [4 /*yield*/, updateBotOrders()];
                 case 1:
                     _a.sent();
-                    return [4 /*yield*/, request_promise_native_1.default.put('http://localhost:3000/db/orders/' + order.order_id, {
-                            body: Object.assign({ botId: botId }, order),
-                            json: true
-                        })];
-                case 2:
-                    _a.sent();
                     return [2 /*return*/];
             }
         });
@@ -692,9 +683,6 @@ function removeOrder(order) {
             switch (_a.label) {
                 case 0: return [4 /*yield*/, updateBotOrders()];
                 case 1:
-                    _a.sent();
-                    return [4 /*yield*/, request_promise_native_1.default.delete('http://localhost:3000/db/orders/' + order.order_id)];
-                case 2:
                     _a.sent();
                     return [2 /*return*/];
             }
