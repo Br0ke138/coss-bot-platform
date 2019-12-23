@@ -49,7 +49,6 @@ export interface Bot {
   name: string;
   type: BotTypes;
   status?: BotStatus;
-  orders?: Array<OrderResponse>;
   config?: Config;
   keys: {id: string, name: string};
 }
@@ -72,6 +71,7 @@ export interface Config {
   numberOfGrids: string;
   amountPerGrid: string;
   grids?: Array<number>;
+  orders?: Array<OrderResponse>;
   precisionPrice?: number;
   precisionAmount?: number;
 }

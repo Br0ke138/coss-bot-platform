@@ -110,13 +110,12 @@
     <mat-card>
       <mat-card-title>Orders</mat-card-title>
       <div class="flex-container">
-        <apx-chart [tooltip]="tooltip" [series]="seriesRunning" [chart]="chart" [title]="title"
-                   [xaxis]="xAxis" [yaxis]="yAxis" [stroke]="stroke" [colors]="colorsRunning" [grid]="grid"
-                   [legend]="legend"></apx-chart>
+        <h2>Buy Orders</h2>
+        <h2>Sell Orders</h2>
       </div>
       <div class="flex-container">
-        <app-order-table [pair]="currentPair" [dataSource]="buyOrders"></app-order-table>
-        <app-order-table [pair]="currentPair" [dataSource]="sellOrders"></app-order-table>
+        <app-order-table [pair]="currentPair" [dataSource]="buyOrdersRunning"></app-order-table>
+        <app-order-table [pair]="currentPair" [dataSource]="sellOrdersRunning"></app-order-table>
       </div>
     </mat-card>
   </ng-container>

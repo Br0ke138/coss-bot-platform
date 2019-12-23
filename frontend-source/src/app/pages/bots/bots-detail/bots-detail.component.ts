@@ -40,7 +40,7 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
     enabled: false,
   };
   series: ApexAxisChartSeries;
-  seriesRunning: ApexAxisChartSeries;
+  seriesRunning: ApexAxisChartSeries = [];
   seriesCopy: ApexAxisChartSeries;
   chart: ApexChart = {
     height: 400,
@@ -162,7 +162,21 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
     profit: string;
   }> = [];
 
+  buyOrdersRunning: Array<{
+    price: number;
+    asset: string;
+    quote: number;
+    profit: string;
+  }> = [];
+
   sellOrders: Array<{
+    price: number;
+    asset: string;
+    quote: number;
+    profit: string;
+  }> = [];
+
+  sellOrdersRunning: Array<{
     price: number;
     asset: string;
     quote: number;
@@ -208,6 +222,7 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
         this.bot = bot;
         if (this.bot) {
           if (this.bot.config) {
+            this.currentPair = this.bot.config.pair;
             this.precisionPrice = this.bot.config.precisionPrice;
             this.precisionAmount = this.bot.config.precisionAmount;
             this.form = new FormGroup({
@@ -228,8 +243,8 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
             });
           }
 
-          if (this.bot.orders && this.bot.orders.length > 0 && this.bot.status === 'Running') {
-            this.fillOrders(this.bot.orders);
+          if (this.bot.config.orders && this.bot.config.orders.length > 0 && this.bot.status === 'Running') {
+            this.fillOrders(this.bot.config.orders);
           }
           this.form.valueChanges.subscribe((value) => {
             this.editedForm = true;
@@ -251,11 +266,11 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
                 this.form.enable();
               }
 
-              if (self.bot.orders && self.bot.orders.length > 0 && self.bot.status === 'Running') {
-                self.fillOrders(self.bot.orders);
+              if (self.bot.config.orders && self.bot.config.orders.length > 0 && self.bot.status === 'Running') {
+                self.fillOrders(self.bot.config.orders);
               }
             });
-          }, 10000);
+          }, 5000);
         }
       });
     });
@@ -282,67 +297,68 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
           price: parseFloat(order.order_price),
           asset: Decimal.div(this.form.value.amountPerGrid, parseFloat(order.order_price)).toNumber().toFixed(this.precisionAmount),
           quote: this.form.value.amountPerGrid,
-          profit: ((((parseFloat(order.order_price) + this.margin) / parseFloat(order.order_price)) - 1) * 100).toFixed(2),
+          profit: ((((parseFloat(order.order_price) + this.getGridDistance()) / parseFloat(order.order_price)) - 1) * 100).toFixed(2),
         });
       } else {
         sellOrders.push({
           price: parseFloat(order.order_price),
           asset: Decimal.div(this.form.value.amountPerGrid, parseFloat(order.order_price)).toNumber().toFixed(this.precisionAmount),
           quote: this.form.value.amountPerGrid,
-          profit: ((((parseFloat(order.order_price) + this.margin) / parseFloat(order.order_price)) - 1) * 100).toFixed(2),
+          profit: ((((parseFloat(order.order_price) + this.getGridDistance()) / parseFloat(order.order_price)) - 1) * 100).toFixed(2),
         });
       }
     });
-    this.buyOrders = buyOrders;
-    this.sellOrders = sellOrders;
+    console.log(buyOrders, sellOrders);
+    this.buyOrdersRunning = buyOrders;
+    this.sellOrdersRunning = sellOrders;
 
-    this.http.get('http://localhost:3000/api/engine/cs?symbol=' + this.bot.config.pair + '&tt=12h')
-      .pipe(take(1))
-      .subscribe((cs: { series: Array<any> }) => {
-        const data = [];
-        const dateTimes = [];
-
-        cs.series.forEach(entry => {
-          const dataEntry = {
-            x: new Date(entry[0]),
-            y: [
-              parseFloat(entry[1]),
-              parseFloat(entry[2]),
-              parseFloat(entry[3]),
-              parseFloat(entry[4]),
-            ]
-          };
-          data.push(dataEntry);
-          dateTimes.push(entry[0]);
-        });
-
-        const seriesRunning = [{
-          name: '2h',
-          // @ts-ignore
-          type: 'candlestick',
-          data
-        }];
-        this.colorsRunning = ['black'];
-
-        orders.forEach((order, index) => {
-          const array = [];
-          dateTimes.forEach(dateTime => {
-            array.push({
-              x: new Date(dateTime),
-              y: parseFloat(order.order_price)
-            });
-          });
-          seriesRunning.push({
-            name: 'grid #' + (index + 1),
-            // @ts-ignore
-            type: 'line',
-            data: array
-          });
-          this.colorsRunning.push('white');
-        });
-
-        this.seriesRunning = seriesRunning;
-      });
+    // this.http.get('http://localhost:3000/api/engine/cs?symbol=' + this.bot.config.pair + '&tt=12h')
+    //   .pipe(take(1))
+    //   .subscribe((cs: { series: Array<any> }) => {
+    //     const data = [];
+    //     const dateTimes = [];
+    //
+    //     cs.series.forEach(entry => {
+    //       const dataEntry = {
+    //         x: new Date(entry[0]),
+    //         y: [
+    //           parseFloat(entry[1]),
+    //           parseFloat(entry[2]),
+    //           parseFloat(entry[3]),
+    //           parseFloat(entry[4]),
+    //         ]
+    //       };
+    //       data.push(dataEntry);
+    //       dateTimes.push(entry[0]);
+    //     });
+    //
+    //     const seriesRunning = [{
+    //       name: '2h',
+    //       // @ts-ignore
+    //       type: 'candlestick',
+    //       data
+    //     }];
+    //     this.colorsRunning = ['black'];
+    //
+    //     orders.forEach((order, index) => {
+    //       const array = [];
+    //       dateTimes.forEach(dateTime => {
+    //         array.push({
+    //           x: new Date(dateTime),
+    //           y: parseFloat(order.order_price)
+    //         });
+    //       });
+    //       seriesRunning.push({
+    //         name: 'grid #' + (index + 1),
+    //         // @ts-ignore
+    //         type: 'line',
+    //         data: array
+    //       });
+    //       this.colorsRunning.push('white');
+    //     });
+    //
+    //     this.seriesRunning = seriesRunning;
+    //   });
   }
 
   private _filter(value: string): string[] {
@@ -375,8 +391,8 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
         this.bot = bot;
         this.form.disable();
 
-        if (this.bot.orders && this.bot.orders.length > 0 && this.bot.status === 'Running') {
-          this.fillOrders(this.bot.orders);
+        if (this.bot.config.orders && this.bot.config.orders.length > 0 && this.bot.status === 'Running') {
+          this.fillOrders(this.bot.config.orders);
         }
       });
     });

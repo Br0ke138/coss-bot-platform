@@ -8,7 +8,6 @@ export interface Bot {
     name: string;
     type: BotTypes;
     status?: BotStatus;
-    orders?: Array<string>;
     config?: Config;
     keys: { id: string, name: string };
 }

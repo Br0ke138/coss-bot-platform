@@ -28,6 +28,8 @@ var CossApiService = /** @class */ (function () {
                 'Content-Type': 'application/json',
                 'Authorization': '',
                 'Signature': '',
+                'X-Requested-With': 'XMLHttpRequest',
+                'x-coss-bot': 'CBS2312192',
             },
             body: {}
         };

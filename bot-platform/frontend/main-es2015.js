@@ -71,7 +71,7 @@ __webpack_require__.r(__webpack_exports__);
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony default export */ __webpack_exports__["default"] = ("<mat-card>\r\n  <mat-card-title>How to</mat-card-title>\r\n  <ol>\r\n    <li>Select a pair</li>\r\n    <li>Optional: click on visualize to</li>\r\n    <li>Setup the price range the bot operates in (Upper and Lower wall)</li>\r\n    <li>Enter the max number of grids (The bot will calculate the possible grid distance and reduces the amount to the possible amount inside the range)</li>\r\n    <li>Enter the Amount per Grid (per Order) in the quote (COS_ETH -> in ETH) (If the number is lower then the min Order Size the save button is greyed out</li>\r\n    <li>Click on visualize and check if everything is as you wish</li>\r\n    <li>Click on save</li>\r\n    <li>Click on start</li>\r\n  </ol>\r\n</mat-card>\r\n\r\n<div class=\"flex-container\">\r\n  <mat-card>\r\n    <mat-card-title>Details</mat-card-title>\r\n    <p>Name: {{ bot?.name }} </p>\r\n    <p>Type: {{ bot?.type }} </p>\r\n    <p>Status: {{ bot?.status }} </p>\r\n  </mat-card>\r\n</div>\r\n\r\n<mat-card>\r\n  <mat-card-title>Action</mat-card-title>\r\n  <ng-container *ngIf=\"bot?.status === 'Crashed'\">\r\n    <button mat-raised-button color=\"primary\" (click)=\"startBot()\">Restart</button>\r\n    <button mat-raised-button color=\"primary\" (click)=\"stopBot()\">Cancel Orders</button>\r\n  </ng-container>\r\n  <ng-container *ngIf=\"bot?.status !== 'Crashed'\">\r\n    <button mat-raised-button color=\"primary\" [disabled]=\"bot?.status === 'Running' || !bot?.config\" (click)=\"startBot()\">Start</button>\r\n    <button mat-raised-button color=\"primary\" [disabled]=\"bot?.status !== 'Running'\" (click)=\"stopBot()\">Cancel Orders and\r\n      Stop\r\n    </button>\r\n    <button mat-raised-button color=\"primary\" [disabled]=\"bot?.status === 'Running'\" (click)=\"removeBot()\">Delete</button>\r\n  </ng-container>\r\n\r\n</mat-card>\r\n\r\n<ng-container *ngIf=\"bot?.type === 'GRID'\">\r\n  <mat-card *ngIf=\"bot?.status === 'Init' || bot?.status === 'Stopped'\">\r\n    <mat-card-title>Configuration</mat-card-title>\r\n\r\n    <div class=\"flex-container\">\r\n\r\n      <form class=\"example-form\" [formGroup]=\"form\">\r\n\r\n\r\n        <mat-form-field class=\"example-full-width\">\r\n          <input type=\"text\" placeholder=\"Pair\" matInput [formControl]=\"pairSearch\" [matAutocomplete]=\"auto\">\r\n          <mat-autocomplete #auto=\"matAutocomplete\">\r\n            <mat-option *ngFor=\"let symbol of filteredOptions | async\" [value]=\"symbol\" (click)=\"form.patchValue({pair: symbol})\">\r\n              {{symbol}}\r\n            </mat-option>\r\n          </mat-autocomplete>\r\n        </mat-form-field>\r\n\r\n        <mat-form-field class=\"example-full-width\">\r\n          <input matInput placeholder=\"Upper Wall\" value=\"\" formControlName=\"upperWall\"\r\n                 [value]=\"form.get('upperWall').value\">\r\n        </mat-form-field>\r\n\r\n        <mat-form-field class=\"example-full-width\">\r\n          <input matInput placeholder=\"Lower Wall\" value=\"\" formControlName=\"lowerWall\"\r\n                 [value]=\"form.get('lowerWall').value\">\r\n        </mat-form-field>\r\n\r\n        <mat-form-field class=\"example-full-width\">\r\n          <input matInput [placeholder]=\"'Number of Grids (Max: ' + getMaxGrids() + ')'\" value=\"\" formControlName=\"numberOfGrids\"\r\n                 [value]=\"form.get('numberOfGrids').value\">\r\n        </mat-form-field>\r\n\r\n        <mat-form-field class=\"example-full-width\">\r\n          <input matInput [placeholder]=\"'Amount per Grid (Min: ' + minOrderSize + ')'\" value=\"\" formControlName=\"amountPerGrid\"\r\n                 [value]=\"form.get('amountPerGrid').value\">\r\n        </mat-form-field>\r\n\r\n        <button mat-raised-button color=\"primary\"\r\n                [disabled]=\"!editedForm || gridsAll.length === 0 || form.value.numberOfGrids > getMaxGrids() || form.value.amountPerGrid < minOrderSize || bot?.status === 'Running' || !form.value.pair || !form.value.upperWall || !form.value.lowerWall || !form.value.numberOfGrids || !form.value.amountPerGrid\"\r\n                (click)=\"saveConfig()\">{{editedForm ? 'Save' : 'Saved' }}\r\n        </button>\r\n\r\n        <button mat-raised-button color=\"primary\"\r\n                [disabled]=\"!form.value.pair\"\r\n                (click)=\"initChart(form.value)\">Visualize\r\n        </button>\r\n\r\n        <div *ngIf=\"form && form.value.upperWall && form.value.lowerWall && form.value.numberOfGrids && grids.length > 0\">\r\n          <p>Grid distance: {{ getGridDistance() }}</p>\r\n        </div>\r\n      </form>\r\n\r\n      <mat-spinner *ngIf=\"currentPair && !showChart\"></mat-spinner>\r\n      <apx-chart *ngIf=\"showChart\" [tooltip]=\"tooltip\" [series]=\"series\" [chart]=\"chart\" [title]=\"title\"\r\n                 [xaxis]=\"xAxis\" [yaxis]=\"yAxis\" [stroke]=\"stroke\" [colors]=\"colors\" [grid]=\"grid\"\r\n                 [legend]=\"legend\"></apx-chart>\r\n    </div>\r\n    <div class=\"flex-container\" *ngIf=\"showChart && form.value.amountPerGrid > 0 && getBuyOrders().length > 0\">\r\n      <h2>Initial Buy Orders (Need {{ totalBuy }} {{ currentPair ? currentPair.split('_')[1] : '' }})</h2>\r\n      <h2>Initial Sell Orders (Need {{ totalSell }} {{ currentPair ? currentPair.split('_')[0] : '' }})</h2>\r\n    </div>\r\n    <div class=\"flex-container\" *ngIf=\"showChart && form.value.amountPerGrid > 0 && getBuyOrders().length > 0\">\r\n      <app-order-table [pair]=\"currentPair\" [dataSource]=\"getBuyOrders()\"></app-order-table>\r\n      <app-order-table [pair]=\"currentPair\" [dataSource]=\"getSellOrders()\"></app-order-table>\r\n    </div>\r\n\r\n  </mat-card>\r\n\r\n  <ng-container *ngIf=\"bot?.status === 'Running'\">\r\n    <mat-card>\r\n      <mat-card-title>Orders</mat-card-title>\r\n      <div class=\"flex-container\">\r\n        <apx-chart [tooltip]=\"tooltip\" [series]=\"seriesRunning\" [chart]=\"chart\" [title]=\"title\"\r\n                   [xaxis]=\"xAxis\" [yaxis]=\"yAxis\" [stroke]=\"stroke\" [colors]=\"colorsRunning\" [grid]=\"grid\"\r\n                   [legend]=\"legend\"></apx-chart>\r\n      </div>\r\n      <div class=\"flex-container\">\r\n        <app-order-table [pair]=\"currentPair\" [dataSource]=\"buyOrders\"></app-order-table>\r\n        <app-order-table [pair]=\"currentPair\" [dataSource]=\"sellOrders\"></app-order-table>\r\n      </div>\r\n    </mat-card>\r\n  </ng-container>\r\n\r\n\r\n</ng-container>\r\n");
+/* harmony default export */ __webpack_exports__["default"] = ("<mat-card>\r\n  <mat-card-title>How to</mat-card-title>\r\n  <ol>\r\n    <li>Select a pair</li>\r\n    <li>Optional: click on visualize to</li>\r\n    <li>Setup the price range the bot operates in (Upper and Lower wall)</li>\r\n    <li>Enter the max number of grids (The bot will calculate the possible grid distance and reduces the amount to the possible amount inside the range)</li>\r\n    <li>Enter the Amount per Grid (per Order) in the quote (COS_ETH -> in ETH) (If the number is lower then the min Order Size the save button is greyed out</li>\r\n    <li>Click on visualize and check if everything is as you wish</li>\r\n    <li>Click on save</li>\r\n    <li>Click on start</li>\r\n  </ol>\r\n</mat-card>\r\n\r\n<div class=\"flex-container\">\r\n  <mat-card>\r\n    <mat-card-title>Details</mat-card-title>\r\n    <p>Name: {{ bot?.name }} </p>\r\n    <p>Type: {{ bot?.type }} </p>\r\n    <p>Status: {{ bot?.status }} </p>\r\n  </mat-card>\r\n</div>\r\n\r\n<mat-card>\r\n  <mat-card-title>Action</mat-card-title>\r\n  <ng-container *ngIf=\"bot?.status === 'Crashed'\">\r\n    <button mat-raised-button color=\"primary\" (click)=\"startBot()\">Restart</button>\r\n    <button mat-raised-button color=\"primary\" (click)=\"stopBot()\">Cancel Orders</button>\r\n  </ng-container>\r\n  <ng-container *ngIf=\"bot?.status !== 'Crashed'\">\r\n    <button mat-raised-button color=\"primary\" [disabled]=\"bot?.status === 'Running' || !bot?.config\" (click)=\"startBot()\">Start</button>\r\n    <button mat-raised-button color=\"primary\" [disabled]=\"bot?.status !== 'Running'\" (click)=\"stopBot()\">Cancel Orders and\r\n      Stop\r\n    </button>\r\n    <button mat-raised-button color=\"primary\" [disabled]=\"bot?.status === 'Running'\" (click)=\"removeBot()\">Delete</button>\r\n  </ng-container>\r\n\r\n</mat-card>\r\n\r\n<ng-container *ngIf=\"bot?.type === 'GRID'\">\r\n  <mat-card *ngIf=\"bot?.status === 'Init' || bot?.status === 'Stopped'\">\r\n    <mat-card-title>Configuration</mat-card-title>\r\n\r\n    <div class=\"flex-container\">\r\n\r\n      <form class=\"example-form\" [formGroup]=\"form\">\r\n\r\n\r\n        <mat-form-field class=\"example-full-width\">\r\n          <input type=\"text\" placeholder=\"Pair\" matInput [formControl]=\"pairSearch\" [matAutocomplete]=\"auto\">\r\n          <mat-autocomplete #auto=\"matAutocomplete\">\r\n            <mat-option *ngFor=\"let symbol of filteredOptions | async\" [value]=\"symbol\" (click)=\"form.patchValue({pair: symbol})\">\r\n              {{symbol}}\r\n            </mat-option>\r\n          </mat-autocomplete>\r\n        </mat-form-field>\r\n\r\n        <mat-form-field class=\"example-full-width\">\r\n          <input matInput placeholder=\"Upper Wall\" value=\"\" formControlName=\"upperWall\"\r\n                 [value]=\"form.get('upperWall').value\">\r\n        </mat-form-field>\r\n\r\n        <mat-form-field class=\"example-full-width\">\r\n          <input matInput placeholder=\"Lower Wall\" value=\"\" formControlName=\"lowerWall\"\r\n                 [value]=\"form.get('lowerWall').value\">\r\n        </mat-form-field>\r\n\r\n        <mat-form-field class=\"example-full-width\">\r\n          <input matInput [placeholder]=\"'Number of Grids (Max: ' + getMaxGrids() + ')'\" value=\"\" formControlName=\"numberOfGrids\"\r\n                 [value]=\"form.get('numberOfGrids').value\">\r\n        </mat-form-field>\r\n\r\n        <mat-form-field class=\"example-full-width\">\r\n          <input matInput [placeholder]=\"'Amount per Grid (Min: ' + minOrderSize + ')'\" value=\"\" formControlName=\"amountPerGrid\"\r\n                 [value]=\"form.get('amountPerGrid').value\">\r\n        </mat-form-field>\r\n\r\n        <button mat-raised-button color=\"primary\"\r\n                [disabled]=\"!editedForm || gridsAll.length === 0 || form.value.numberOfGrids > getMaxGrids() || form.value.amountPerGrid < minOrderSize || bot?.status === 'Running' || !form.value.pair || !form.value.upperWall || !form.value.lowerWall || !form.value.numberOfGrids || !form.value.amountPerGrid\"\r\n                (click)=\"saveConfig()\">{{editedForm ? 'Save' : 'Saved' }}\r\n        </button>\r\n\r\n        <button mat-raised-button color=\"primary\"\r\n                [disabled]=\"!form.value.pair\"\r\n                (click)=\"initChart(form.value)\">Visualize\r\n        </button>\r\n\r\n        <div *ngIf=\"form && form.value.upperWall && form.value.lowerWall && form.value.numberOfGrids && grids.length > 0\">\r\n          <p>Grid distance: {{ getGridDistance() }}</p>\r\n        </div>\r\n      </form>\r\n\r\n      <mat-spinner *ngIf=\"currentPair && !showChart\"></mat-spinner>\r\n      <apx-chart *ngIf=\"showChart\" [tooltip]=\"tooltip\" [series]=\"series\" [chart]=\"chart\" [title]=\"title\"\r\n                 [xaxis]=\"xAxis\" [yaxis]=\"yAxis\" [stroke]=\"stroke\" [colors]=\"colors\" [grid]=\"grid\"\r\n                 [legend]=\"legend\"></apx-chart>\r\n    </div>\r\n    <div class=\"flex-container\" *ngIf=\"showChart && form.value.amountPerGrid > 0 && getBuyOrders().length > 0\">\r\n      <h2>Initial Buy Orders (Need {{ totalBuy }} {{ currentPair ? currentPair.split('_')[1] : '' }})</h2>\r\n      <h2>Initial Sell Orders (Need {{ totalSell }} {{ currentPair ? currentPair.split('_')[0] : '' }})</h2>\r\n    </div>\r\n    <div class=\"flex-container\" *ngIf=\"showChart && form.value.amountPerGrid > 0 && getBuyOrders().length > 0\">\r\n      <app-order-table [pair]=\"currentPair\" [dataSource]=\"getBuyOrders()\"></app-order-table>\r\n      <app-order-table [pair]=\"currentPair\" [dataSource]=\"getSellOrders()\"></app-order-table>\r\n    </div>\r\n\r\n  </mat-card>\r\n\r\n  <ng-container *ngIf=\"bot?.status === 'Running'\">\r\n    <mat-card>\r\n      <mat-card-title>Orders</mat-card-title>\r\n      <div class=\"flex-container\">\r\n        <h2>Buy Orders</h2>\r\n        <h2>Sell Orders</h2>\r\n      </div>\r\n      <div class=\"flex-container\">\r\n        <app-order-table [pair]=\"currentPair\" [dataSource]=\"buyOrdersRunning\"></app-order-table>\r\n        <app-order-table [pair]=\"currentPair\" [dataSource]=\"sellOrdersRunning\"></app-order-table>\r\n      </div>\r\n    </mat-card>\r\n  </ng-container>\r\n\r\n\r\n</ng-container>\r\n");
 
 /***/ }),
 
@@ -782,6 +782,7 @@ let BotsDetailComponent = class BotsDetailComponent {
         this.tooltip = {
             enabled: false,
         };
+        this.seriesRunning = [];
         this.chart = {
             height: 400,
             type: 'line',
@@ -865,7 +866,9 @@ let BotsDetailComponent = class BotsDetailComponent {
         this.editedForm = false;
         this.pairSearch = new _angular_forms__WEBPACK_IMPORTED_MODULE_4__["FormControl"]();
         this.buyOrders = [];
+        this.buyOrdersRunning = [];
         this.sellOrders = [];
+        this.sellOrdersRunning = [];
     }
     ngOnInit() {
         this.http.get('http://localhost:3000/api/trade/exchange-info')
@@ -890,6 +893,7 @@ let BotsDetailComponent = class BotsDetailComponent {
                 this.bot = bot;
                 if (this.bot) {
                     if (this.bot.config) {
+                        this.currentPair = this.bot.config.pair;
                         this.precisionPrice = this.bot.config.precisionPrice;
                         this.precisionAmount = this.bot.config.precisionAmount;
                         this.form = new _angular_forms__WEBPACK_IMPORTED_MODULE_4__["FormGroup"]({
@@ -909,8 +913,8 @@ let BotsDetailComponent = class BotsDetailComponent {
                             amountPerGrid: new _angular_forms__WEBPACK_IMPORTED_MODULE_4__["FormControl"](),
                         });
                     }
-                    if (this.bot.orders && this.bot.orders.length > 0 && this.bot.status === 'Running') {
-                        this.fillOrders(this.bot.orders);
+                    if (this.bot.config.orders && this.bot.config.orders.length > 0 && this.bot.status === 'Running') {
+                        this.fillOrders(this.bot.config.orders);
                     }
                     this.form.valueChanges.subscribe((value) => {
                         this.editedForm = true;
@@ -931,11 +935,11 @@ let BotsDetailComponent = class BotsDetailComponent {
                             else {
                                 this.form.enable();
                             }
-                            if (self.bot.orders && self.bot.orders.length > 0 && self.bot.status === 'Running') {
-                                self.fillOrders(self.bot.orders);
+                            if (self.bot.config.orders && self.bot.config.orders.length > 0 && self.bot.status === 'Running') {
+                                self.fillOrders(self.bot.config.orders);
                             }
                         });
-                    }, 10000);
+                    }, 5000);
                 }
             });
         });
@@ -949,7 +953,7 @@ let BotsDetailComponent = class BotsDetailComponent {
                     price: parseFloat(order.order_price),
                     asset: decimal_js__WEBPACK_IMPORTED_MODULE_7__["Decimal"].div(this.form.value.amountPerGrid, parseFloat(order.order_price)).toNumber().toFixed(this.precisionAmount),
                     quote: this.form.value.amountPerGrid,
-                    profit: ((((parseFloat(order.order_price) + this.margin) / parseFloat(order.order_price)) - 1) * 100).toFixed(2),
+                    profit: ((((parseFloat(order.order_price) + this.getGridDistance()) / parseFloat(order.order_price)) - 1) * 100).toFixed(2),
                 });
             }
             else {
@@ -957,55 +961,60 @@ let BotsDetailComponent = class BotsDetailComponent {
                     price: parseFloat(order.order_price),
                     asset: decimal_js__WEBPACK_IMPORTED_MODULE_7__["Decimal"].div(this.form.value.amountPerGrid, parseFloat(order.order_price)).toNumber().toFixed(this.precisionAmount),
                     quote: this.form.value.amountPerGrid,
-                    profit: ((((parseFloat(order.order_price) + this.margin) / parseFloat(order.order_price)) - 1) * 100).toFixed(2),
+                    profit: ((((parseFloat(order.order_price) + this.getGridDistance()) / parseFloat(order.order_price)) - 1) * 100).toFixed(2),
                 });
             }
         });
-        this.buyOrders = buyOrders;
-        this.sellOrders = sellOrders;
-        this.http.get('http://localhost:3000/api/engine/cs?symbol=' + this.bot.config.pair + '&tt=12h')
-            .pipe(Object(rxjs_operators__WEBPACK_IMPORTED_MODULE_5__["take"])(1))
-            .subscribe((cs) => {
-            const data = [];
-            const dateTimes = [];
-            cs.series.forEach(entry => {
-                const dataEntry = {
-                    x: new Date(entry[0]),
-                    y: [
-                        parseFloat(entry[1]),
-                        parseFloat(entry[2]),
-                        parseFloat(entry[3]),
-                        parseFloat(entry[4]),
-                    ]
-                };
-                data.push(dataEntry);
-                dateTimes.push(entry[0]);
-            });
-            const seriesRunning = [{
-                    name: '2h',
-                    // @ts-ignore
-                    type: 'candlestick',
-                    data
-                }];
-            this.colorsRunning = ['black'];
-            orders.forEach((order, index) => {
-                const array = [];
-                dateTimes.forEach(dateTime => {
-                    array.push({
-                        x: new Date(dateTime),
-                        y: parseFloat(order.order_price)
-                    });
-                });
-                seriesRunning.push({
-                    name: 'grid #' + (index + 1),
-                    // @ts-ignore
-                    type: 'line',
-                    data: array
-                });
-                this.colorsRunning.push('white');
-            });
-            this.seriesRunning = seriesRunning;
-        });
+        console.log(buyOrders, sellOrders);
+        this.buyOrdersRunning = buyOrders;
+        this.sellOrdersRunning = sellOrders;
+        // this.http.get('http://localhost:3000/api/engine/cs?symbol=' + this.bot.config.pair + '&tt=12h')
+        //   .pipe(take(1))
+        //   .subscribe((cs: { series: Array<any> }) => {
+        //     const data = [];
+        //     const dateTimes = [];
+        //
+        //     cs.series.forEach(entry => {
+        //       const dataEntry = {
+        //         x: new Date(entry[0]),
+        //         y: [
+        //           parseFloat(entry[1]),
+        //           parseFloat(entry[2]),
+        //           parseFloat(entry[3]),
+        //           parseFloat(entry[4]),
+        //         ]
+        //       };
+        //       data.push(dataEntry);
+        //       dateTimes.push(entry[0]);
+        //     });
+        //
+        //     const seriesRunning = [{
+        //       name: '2h',
+        //       // @ts-ignore
+        //       type: 'candlestick',
+        //       data
+        //     }];
+        //     this.colorsRunning = ['black'];
+        //
+        //     orders.forEach((order, index) => {
+        //       const array = [];
+        //       dateTimes.forEach(dateTime => {
+        //         array.push({
+        //           x: new Date(dateTime),
+        //           y: parseFloat(order.order_price)
+        //         });
+        //       });
+        //       seriesRunning.push({
+        //         name: 'grid #' + (index + 1),
+        //         // @ts-ignore
+        //         type: 'line',
+        //         data: array
+        //       });
+        //       this.colorsRunning.push('white');
+        //     });
+        //
+        //     this.seriesRunning = seriesRunning;
+        //   });
     }
     _filter(value) {
         const filterValue = value.toLowerCase();
@@ -1032,8 +1041,8 @@ let BotsDetailComponent = class BotsDetailComponent {
             this.botsService.getBot(this.bot.id).pipe(Object(rxjs_operators__WEBPACK_IMPORTED_MODULE_5__["take"])(1)).subscribe(bot => {
                 this.bot = bot;
                 this.form.disable();
-                if (this.bot.orders && this.bot.orders.length > 0 && this.bot.status === 'Running') {
-                    this.fillOrders(this.bot.orders);
+                if (this.bot.config.orders && this.bot.config.orders.length > 0 && this.bot.status === 'Running') {
+                    this.fillOrders(this.bot.config.orders);
                 }
             });
         });
