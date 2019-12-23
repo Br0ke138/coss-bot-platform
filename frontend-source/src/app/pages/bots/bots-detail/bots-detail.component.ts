@@ -123,6 +123,7 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
     }
   };
   showChart = false;
+  visualize = false;
 
   symbols: Array<string> = [];
   current: number;
@@ -223,6 +224,7 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
         if (this.bot) {
           if (this.bot.config) {
             this.currentPair = this.bot.config.pair;
+            this.pairSearch.setValue(this.currentPair);
             this.precisionPrice = this.bot.config.precisionPrice;
             this.precisionAmount = this.bot.config.precisionAmount;
             this.form = new FormGroup({
@@ -443,8 +445,8 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
   }
 
   initChart(form: { pair, upperWall, lowerWall, numberOfGrids }) {
+    this.visualize = true;
     if (form.pair) {
-      if (this.currentPair !== form.pair) {
         this.currentPair = form.pair;
         this.getInfos();
         this.showChart = false;
@@ -481,12 +483,10 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
             this.buildGrids(form, this.current, this.dateTimes);
             this.showChart = true;
           });
-      } else {
-        this.buildGrids(form, this.current, this.dateTimes);
-      }
 
     } else {
       this.showChart = false;
+      this.visualize = false;
     }
   }
 
@@ -539,6 +539,7 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
 
       this.series = series;
       this.showChart = true;
+      this.visualize = false;
     }
 
   }

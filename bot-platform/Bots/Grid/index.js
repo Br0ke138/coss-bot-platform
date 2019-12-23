@@ -502,15 +502,17 @@ function cancelAllOrders() {
                 case 1:
                     _a.sent();
                     return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                            var _i, orders_1, order, e_10;
+                            var emptyArray, ordersToCancel, _i, ordersToCancel_1, order, e_10;
                             return __generator(this, function (_a) {
                                 switch (_a.label) {
                                     case 0:
-                                        _i = 0, orders_1 = orders;
+                                        emptyArray = [];
+                                        ordersToCancel = Object.assign(emptyArray, orders);
+                                        _i = 0, ordersToCancel_1 = ordersToCancel;
                                         _a.label = 1;
                                     case 1:
-                                        if (!(_i < orders_1.length)) return [3 /*break*/, 8];
-                                        order = orders_1[_i];
+                                        if (!(_i < ordersToCancel_1.length)) return [3 /*break*/, 8];
+                                        order = ordersToCancel_1[_i];
                                         _a.label = 2;
                                     case 2:
                                         _a.trys.push([2, 6, , 7]);
@@ -534,7 +536,7 @@ function cancelAllOrders() {
                                     case 7:
                                         _i++;
                                         return [3 /*break*/, 1];
-                                    case 8: return [4 /*yield*/, sendTelegram(botName + ': Canceled ' + orders.length + ' orders')];
+                                    case 8: return [4 /*yield*/, sendTelegram(botName + ': Canceled ' + ordersToCancel.length + ' orders')];
                                     case 9:
                                         _a.sent();
                                         resolve(true);

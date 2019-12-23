@@ -1,5 +1,5 @@
 import {CossApiService} from './coss-api/coss-api.service';
-import {CancelOrderResponse, Order, OrderListResponse, OrderResponse, TradeDetailsArray} from "./swaggerSchema";
+import {CancelOrderResponse, OrderListResponse, OrderResponse, TradeDetailsArray} from "./swaggerSchema";
 import request from "request-promise-native";
 import Decimal from "decimal.js";
 
@@ -302,7 +302,9 @@ async function cancelOrder(order: OrderResponse): Promise<boolean> {
 async function cancelAllOrders(): Promise<boolean> {
     await sendTelegram(botName + ': Will cancel all orders ...');
     return new Promise(async (resolve, reject) => {
-        for (let order of orders) {
+        let emptyArray: OrderResponse[] = [];
+        const ordersToCancel = Object.assign(emptyArray, orders);
+        for (let order of ordersToCancel) {
             try {
                 await cancelOrder(order);
                 await removeOrder(order);
@@ -316,7 +318,7 @@ async function cancelAllOrders(): Promise<boolean> {
                 process.exit(0);
             }
         }
-        await sendTelegram(botName + ': Canceled ' + orders.length + ' orders');
+        await sendTelegram(botName + ': Canceled ' + ordersToCancel.length + ' orders');
         resolve(true);
     });
 }

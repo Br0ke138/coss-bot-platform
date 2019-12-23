@@ -90,7 +90,7 @@
         </div>
       </form>
 
-      <mat-spinner *ngIf="currentPair && !showChart"></mat-spinner>
+      <mat-spinner *ngIf="currentPair && !showChart && visualize"></mat-spinner>
       <apx-chart *ngIf="showChart" [tooltip]="tooltip" [series]="series" [chart]="chart" [title]="title"
                  [xaxis]="xAxis" [yaxis]="yAxis" [stroke]="stroke" [colors]="colors" [grid]="grid"
                  [legend]="legend"></apx-chart>
