@@ -263,7 +263,7 @@ function checkOrders() {
                     }
                     _a.label = 8;
                 case 8:
-                    _a.trys.push([8, 34, , 35]);
+                    _a.trys.push([8, 35, , 36]);
                     return [4 /*yield*/, fetchCompletedOrders(config.pair)];
                 case 9:
                     filledOrders = _a.sent();
@@ -359,14 +359,16 @@ function checkOrders() {
                     orders = orders.filter(function (order) {
                         return order.status.toUpperCase() !== "FILLED";
                     });
-                    return [3 /*break*/, 35];
+                    return [4 /*yield*/, updateBotOrders()];
                 case 34:
+                    _a.sent();
+                    return [3 /*break*/, 36];
+                case 35:
                     e_7 = _a.sent();
                     console.log(e_7);
-                    return [3 /*break*/, 35];
-                case 35: return [4 /*yield*/, checkOrders()];
+                    return [3 /*break*/, 36];
                 case 36:
-                    _a.sent();
+                    checkOrders();
                     _a.label = 37;
                 case 37: return [2 /*return*/];
             }
@@ -445,17 +447,17 @@ function cancelOrder(order) {
         var _this = this;
         return __generator(this, function (_a) {
             return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                    var i, canceledOrder, index, e_9;
+                    var i, canceledOrder, index, orderToCancel, index, e_9, e_10, orderToCancel, index, e_11;
                     return __generator(this, function (_a) {
                         switch (_a.label) {
                             case 0:
                                 i = 0;
                                 _a.label = 1;
                             case 1:
-                                if (!(i < 3)) return [3 /*break*/, 6];
+                                if (!(i < 3)) return [3 /*break*/, 15];
                                 _a.label = 2;
                             case 2:
-                                _a.trys.push([2, 4, , 5]);
+                                _a.trys.push([2, 9, , 14]);
                                 return [4 /*yield*/, cossApi.cancelOrder({
                                         timestamp: Date.now(),
                                         recvWindow: 99999999,
@@ -464,29 +466,70 @@ function cancelOrder(order) {
                                     })];
                             case 3:
                                 canceledOrder = _a.sent();
-                                if (canceledOrder && canceledOrder.order_id) {
-                                    console.log('Canceled Order: ' + order.order_id);
+                                if (!(canceledOrder && canceledOrder.order_id)) return [3 /*break*/, 4];
+                                console.log('Canceled Order: ' + order.order_id);
+                                index = orders.indexOf(order);
+                                orders.splice(index, 1);
+                                resolve(true);
+                                return [3 /*break*/, 15];
+                            case 4:
+                                _a.trys.push([4, 6, , 7]);
+                                return [4 /*yield*/, cossApi.getOrderDetails({
+                                        timestamp: Date.now(),
+                                        recvWindow: 99999999,
+                                        order_id: order.order_id
+                                    })];
+                            case 5:
+                                orderToCancel = _a.sent();
+                                if (orderToCancel.status.toUpperCase() === 'CANCELING' || orderToCancel.status.toUpperCase() === 'CANCELED' || orderToCancel.status.toUpperCase() === 'CANCELLED' || orderToCancel.status.toUpperCase() === 'CANCELLING' || orderToCancel.status.toUpperCase() === 'FILLED') {
+                                    console.log('Order doesn´t exist anymore: ' + order.order_id);
                                     index = orders.indexOf(order);
                                     orders.splice(index, 1);
                                     resolve(true);
-                                    return [3 /*break*/, 6];
+                                    return [3 /*break*/, 15];
                                 }
-                                else {
-                                    if (i === 2) {
-                                        reject('Unable to cancel order: ' + order.order_id + order.order_price);
-                                    }
-                                }
-                                return [3 /*break*/, 5];
-                            case 4:
+                                return [3 /*break*/, 7];
+                            case 6:
                                 e_9 = _a.sent();
+                                return [3 /*break*/, 7];
+                            case 7:
                                 if (i === 2) {
                                     reject('Unable to cancel order: ' + order.order_id + order.order_price);
                                 }
-                                return [3 /*break*/, 5];
-                            case 5:
+                                _a.label = 8;
+                            case 8: return [3 /*break*/, 14];
+                            case 9:
+                                e_10 = _a.sent();
+                                _a.label = 10;
+                            case 10:
+                                _a.trys.push([10, 12, , 13]);
+                                return [4 /*yield*/, cossApi.getOrderDetails({
+                                        timestamp: Date.now(),
+                                        recvWindow: 99999999,
+                                        order_id: order.order_id
+                                    })];
+                            case 11:
+                                orderToCancel = _a.sent();
+                                if (orderToCancel.status.toUpperCase() === 'CANCELING' || orderToCancel.status.toUpperCase() === 'CANCELED' || orderToCancel.status.toUpperCase() === 'CANCELLED' || orderToCancel.status.toUpperCase() === 'CANCELLING' || orderToCancel.status.toUpperCase() === 'FILLED') {
+                                    console.log('Order doesn´t exist anymore: ' + order.order_id);
+                                    index = orders.indexOf(order);
+                                    orders.splice(index, 1);
+                                    resolve(true);
+                                    return [3 /*break*/, 15];
+                                }
+                                return [3 /*break*/, 13];
+                            case 12:
+                                e_11 = _a.sent();
+                                return [3 /*break*/, 13];
+                            case 13:
+                                if (i === 2) {
+                                    reject('Unable to cancel order: ' + order.order_id + order.order_price);
+                                }
+                                return [3 /*break*/, 14];
+                            case 14:
                                 i++;
                                 return [3 /*break*/, 1];
-                            case 6: return [2 /*return*/];
+                            case 15: return [2 /*return*/];
                         }
                     });
                 }); })];
@@ -502,7 +545,7 @@ function cancelAllOrders() {
                 case 1:
                     _a.sent();
                     return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                            var emptyArray, ordersToCancel, _i, ordersToCancel_1, order, e_10;
+                            var emptyArray, ordersToCancel, _i, ordersToCancel_1, order, e_12;
                             return __generator(this, function (_a) {
                                 switch (_a.label) {
                                     case 0:
@@ -527,9 +570,9 @@ function cancelAllOrders() {
                                         _a.sent();
                                         return [3 /*break*/, 7];
                                     case 6:
-                                        e_10 = _a.sent();
+                                        e_12 = _a.sent();
                                         // @ts-ignore
-                                        process.send(e_10);
+                                        process.send(e_12);
                                         // @ts-ignore
                                         process.exit(0);
                                         return [3 /*break*/, 7];
@@ -553,7 +596,7 @@ function fetchCompletedOrders(symbol) {
         var _this = this;
         return __generator(this, function (_a) {
             return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                    var i, completedOrders, e_11;
+                    var i, completedOrders, e_13;
                     return __generator(this, function (_a) {
                         switch (_a.label) {
                             case 0:
@@ -584,7 +627,7 @@ function fetchCompletedOrders(symbol) {
                                 }
                                 return [3 /*break*/, 5];
                             case 4:
-                                e_11 = _a.sent();
+                                e_13 = _a.sent();
                                 if (i === 2) {
                                     reject('Unable to fetch completed orders');
                                 }
@@ -604,7 +647,7 @@ function saveHistory(order_id) {
         var _this = this;
         return __generator(this, function (_a) {
             return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                    var i, tradeDetails, _i, tradeDetails_1, tradeDetail, e_12;
+                    var i, tradeDetails, _i, tradeDetails_1, tradeDetail, e_14;
                     return __generator(this, function (_a) {
                         switch (_a.label) {
                             case 0:
@@ -641,7 +684,7 @@ function saveHistory(order_id) {
                                 resolve();
                                 return [3 /*break*/, 9];
                             case 8:
-                                e_12 = _a.sent();
+                                e_14 = _a.sent();
                                 console.log('Unable so get profits for order: ' + order_id);
                                 resolve();
                                 return [3 /*break*/, 9];

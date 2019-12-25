@@ -6,9 +6,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
-    "build-win": "pkg package.json -t win",
-    "build-linux": "pkg package.json -t linux",
-    "build-macos": "pkg package.json -t macos"
+    "build-win": "nexe server.js -t win -o coss-bot-platform-win",
+    "build-linux": "nexe server.js -t linux -o coss-bot-platform-linux",
+    "build-macos": "nexe server.js -t mac -o coss-bot-platform-mac",
+    "build-all": "npm run build-win & npm run build-linux & npm run build-macos"
   },
   "author": "",
   "license": "ISC",
