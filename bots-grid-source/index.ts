@@ -1,5 +1,5 @@
 import {CossApiService} from './coss-api/coss-api.service';
-import {CancelOrderResponse, OrderListResponse, OrderResponse, TradeDetailsArray} from "./swaggerSchema";
+import {CancelOrderResponse, Order, OrderListResponse, OrderResponse, TradeDetailsArray} from "./swaggerSchema";
 import request from "request-promise-native";
 import Decimal from "decimal.js";
 
@@ -215,11 +215,12 @@ async function checkOrders() {
             orders = orders.filter(order => {
                 return order.status.toUpperCase() !== "FILLED"
             });
+            await updateBotOrders();
         } catch (e) {
             console.log(e);
         }
 
-        await checkOrders();
+        checkOrders();
     }
 }
 
@@ -286,11 +287,45 @@ async function cancelOrder(order: OrderResponse): Promise<boolean> {
                     resolve(true);
                     break;
                 } else {
+                    try {
+                        const orderToCancel: OrderResponse = await cossApi.getOrderDetails({
+                            timestamp: Date.now(),
+                            recvWindow: 99999999,
+                            order_id: order.order_id
+                        });
+
+                        if (orderToCancel.status.toUpperCase() === 'CANCELING' || orderToCancel.status.toUpperCase() === 'CANCELED' || orderToCancel.status.toUpperCase() === 'CANCELLED' || orderToCancel.status.toUpperCase() === 'CANCELLING' || orderToCancel.status.toUpperCase() === 'FILLED') {
+                            console.log('Order doesn´t exist anymore: ' + order.order_id);
+                            const index = orders.indexOf(order);
+                            orders.splice(index, 1);
+                            resolve(true);
+                            break;
+                        }
+                    } catch (e) {
+
+                    }
                     if (i === 2) {
                         reject('Unable to cancel order: ' + order.order_id + order.order_price);
                     }
                 }
             } catch (e) {
+                try {
+                    const orderToCancel: OrderResponse = await cossApi.getOrderDetails({
+                        timestamp: Date.now(),
+                        recvWindow: 99999999,
+                        order_id: order.order_id
+                    });
+                    if (orderToCancel.status.toUpperCase() === 'CANCELING' || orderToCancel.status.toUpperCase() === 'CANCELED' || orderToCancel.status.toUpperCase() === 'CANCELLED' || orderToCancel.status.toUpperCase() === 'CANCELLING' || orderToCancel.status.toUpperCase() === 'FILLED') {
+                        console.log('Order doesn´t exist anymore: ' + order.order_id);
+                        const index = orders.indexOf(order);
+                        orders.splice(index, 1);
+                        resolve(true);
+                        break;
+                    }
+                } catch (e) {
+
+                }
+
                 if (i === 2) {
                     reject('Unable to cancel order: ' + order.order_id + order.order_price);
                 }

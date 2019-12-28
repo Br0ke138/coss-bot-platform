@@ -235,6 +235,9 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
               amountPerGrid: new FormControl(this.bot.config.amountPerGrid),
             });
 
+            if (this.bot.config.orders && this.bot.config.orders.length > 0 && this.bot.status === 'Running') {
+              this.fillOrders(this.bot.config.orders);
+            }
           } else {
             this.form = new FormGroup({
               pair: new FormControl(),
@@ -245,9 +248,6 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
             });
           }
 
-          if (this.bot.config.orders && this.bot.config.orders.length > 0 && this.bot.status === 'Running') {
-            this.fillOrders(this.bot.config.orders);
-          }
           this.form.valueChanges.subscribe((value) => {
             this.editedForm = true;
 
@@ -268,7 +268,7 @@ export class BotsDetailComponent implements OnInit, OnDestroy {
                 this.form.enable();
               }
 
-              if (self.bot.config.orders && self.bot.config.orders.length > 0 && self.bot.status === 'Running') {
+              if (self.bot.config && self.bot.config.orders && self.bot.config.orders.length > 0 && self.bot.status === 'Running') {
                 self.fillOrders(self.bot.config.orders);
               }
             });
