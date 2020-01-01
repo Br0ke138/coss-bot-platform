@@ -9,6 +9,7 @@
     "build-win": "nexe server.js -t win -o coss-bot-platform-win",
     "build-linux": "nexe server.js -t linux -o coss-bot-platform-linux",
     "build-macos": "nexe server.js -t mac -o coss-bot-platform-mac",
+    "build-manual": "nexe server.js -o coss-bot-platform",
     "build-all": "npm run build-win & npm run build-linux & npm run build-macos"
   },
   "author": "",
